@@ -16,24 +16,27 @@ class Parser(object):
         context = etree.iterparse(xml, events=events)
 
         ses = Session()
-        #ses.begin()
+        ses.begin()
 
         i = 0
         for action, elem in context:
-            if elem.tag == 'reb':
+            if elem.tag == 'reb' and action == 'start':
 
-                ses.begin()
-                r = ses.query(R_ele).filter(R_ele.reb == elem.text).first();
+                text = elem.text
+
+                #ses.begin()
+                r = ses.query(R_ele).filter(R_ele.reb == text).first();
 
                 if not r:
                     r = R_ele()
-                    r.reb = elem.text 
+                    r.reb = text 
                     ses.add(r)
-                ses.commit()
+                #ses.commit()
 
                 #print('%s: %s %s' % (action, elem.tag, elem.text))
-                print('%s: %s' % (i, elem.text))
+                if i % 1000 == 0:
+                    print('%s: %s' % (i, text))
                 i += 1
 
-        #ses.commit()
+        ses.commit()
 
