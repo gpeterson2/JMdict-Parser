@@ -3,6 +3,7 @@
 from lxml import etree
 
 from model import Session
+from model.entry import Entry
 from model.r_ele import R_ele
 
 class Parser(object):
@@ -16,27 +17,38 @@ class Parser(object):
         context = etree.iterparse(xml, events=events)
 
         ses = Session()
+
+        print('start reading')
+
         ses.begin()
 
-        i = 0
-        for action, elem in context:
-            if elem.tag == 'reb' and action == 'start':
+        entry = Entry()
 
-                text = elem.text
+        # looks like there 142665 total r_ele
+        # still taking forever...
+        # OK, putting everything in a dict, and then inserting sped things up
+        # I don't really want that to be the overall pattern, though
+        for i, (action, elem) in enumerate(context):
 
-                #ses.begin()
-                r = ses.query(R_ele).filter(R_ele.reb == text).first();
+            tag = elem.tag
 
-                if not r:
-                    r = R_ele()
-                    r.reb = text 
-                    ses.add(r)
-                #ses.commit()
+            if tag == 'entry' and action == 'start':
+                entry = Entry()
 
-                #print('%s: %s %s' % (action, elem.tag, elem.text))
-                if i % 1000 == 0:
-                    print('%s: %s' % (i, text))
-                i += 1
+            if tag == 'ent_seq' and action == 'start':
+                entry.ent_seq = elem.text
+                print('%s' % elem.text)
+
+            if tag == 'reb' and action == 'start':
+
+                reb = R_ele()
+                reb.reb = elem.text
+                entry.r_ele.append(reb)
+
+            if tag == 'entry' and action == 'end':
+                ses.add(entry)
 
         ses.commit()
+
+        print('done reading')
 
