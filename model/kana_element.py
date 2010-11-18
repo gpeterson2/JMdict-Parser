@@ -18,10 +18,8 @@ class KanaElement(Base):
     __tablename__ = 'kana_element'
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    reb = Column(Unicode)
+    element = Column(Unicode)
 
-    #entry = relation(Entry, backref='entry')
-        
     def __str__(self):
-        return u'%s' % (self.reb) 
+        return u'%s' % (self.element) 
 

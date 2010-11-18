@@ -13,7 +13,8 @@ def main():
 
     filename = 'test_files/JMdict'
 
-    entries = ses.query(Entry).all();
+    # Just to ensure the database stuff is run
+    entries = ses.query(Entry).first();
     p = Parser()
     p.parse(filename) 
 

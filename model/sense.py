@@ -22,8 +22,6 @@ class Sense(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     gloss = relation(Gloss, backref='sense') 
 
-    #entry = relation(Entry, backref='sense_entry')
-        
     def __str__(self):
         return u'%s' % (u', '.join([g for g in self.gloss])) 
 

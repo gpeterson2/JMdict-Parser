@@ -26,10 +26,8 @@ class KanjiElement(Base):
     __tablename__ = 'kanji_element'
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    keb = Column(Unicode)
+    element = Column(Unicode)
 
-    #entry = relation(Entry, backref='kanji_element')
-        
     def __str__(self):
-        return u'%s' % (self.keb) 
+        return u'%s' % (self.element) 
 

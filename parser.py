@@ -43,17 +43,17 @@ class Parser(object):
 
             if tag == 'reb' and action == 'start':
 
-                reb = KanaElement()
-                reb.reb = elem.text
-                #entry.kana.append(reb)
-                entry.kana = reb
+                kana = KanaElement()
+                kana.element = elem.text
+                #entry.kana.append(kana)
+                entry.kana = kana
 
             if tag == 'keb' and action == 'start':
 
-                keb = KanjiElement()
-                keb.keb = elem.text
-                #entry.kanji.append(keb)
-                entry.kanji = keb
+                kanji = KanjiElement()
+                kanji.element = elem.text
+                #entry.kanji.append(kanji)
+                entry.kanji = kanji
 
             if tag == 'sense' and action == 'start':
                 sense = Sense();
@@ -71,7 +71,8 @@ class Parser(object):
                 ses.add(entry)
                 ses.commit()
 
-                if i > 10000:
+                # to make testing easier
+                if i > 1000:
                     break
 
         print('done reading')
