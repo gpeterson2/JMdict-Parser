@@ -1,14 +1,14 @@
 #! /usr/bin/env python
 
 from sqlalchemy import Column, Integer, Table, Unicode
-from sqlalchemy.orm import relation
+from sqlalchemy.orm import relationship
 from sqlalchemy.schema import ForeignKey
 
 from meta import Base, metadata
 
-from sense import Sense
-from k_ele import K_ele
-from r_ele import R_ele
+#from sense import Sense
+#from k_ele import K_ele
+#from r_ele import R_ele
 
 metadata = Base.metadata
 
@@ -24,14 +24,18 @@ class Entry(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     ent_seq = Column(Integer)
 
-    k_ele = relation(K_ele, backref='k_ele')
-    r_ele = relation(R_ele, backref='r_ele')
-    sense = relation(Sense, backref='sense')
+    kanji_id = Column(Integer, ForeignKey('kanji_element.id'))
+    kana_id = Column(Integer, ForeignKey('kana_element.id'))
+    sense_id = Column(Integer, ForeignKey('sense.id'))
+
+    kanji = relationship('KanjiElement', backref='entry')
+    kana = relationship('KanaElement', backref='entry')
+    sense = relationship('Sense', backref='entry')
 
     def __str__(self):
         return u'k_ele: %s r_ele: %s sense: %s' % (
-            u', '.join([s for s in self.k_ele]),
-            u', '.join([s for s in self.r_ele]),
+            u', '.join([s for s in self.kanji]),
+            u', '.join([s for s in self.kana]),
             u', '.join([s for s in self.sense])
         )
 

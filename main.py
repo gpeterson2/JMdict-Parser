@@ -7,12 +7,13 @@ from parser import Parser
 
 def main():
     connection_string = 'sqlite:///test.db'
-    init_model(connection_string, False)
+    init_model(connection_string, True)
 
     ses = Session()
 
     filename = 'test_files/JMdict'
 
+    entries = ses.query(Entry).all();
     p = Parser()
     p.parse(filename) 
 

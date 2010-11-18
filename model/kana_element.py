@@ -6,18 +6,21 @@ from sqlalchemy.schema import ForeignKey
 
 from meta import Base, metadata
 
+from entry import Entry
+
 metadata = Base.metadata
 
-class R_ele(Base):
+class KanaElement(Base):
     '''this element content is restricted to kana and related characters such 
     as chouon and kurikaeshi. Kana usage will be consistent between the keb 
     and reb elements; e.g. if the keb contains katakana, so too will the reb.'''
 
-    __tablename__ = 'r_elem'
+    __tablename__ = 'kana_element'
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    entry_id = Column(Integer, ForeignKey('entry.id'))
     reb = Column(Unicode)
+
+    #entry = relation(Entry, backref='entry')
         
     def __str__(self):
         return u'%s' % (self.reb) 

@@ -7,6 +7,7 @@ from sqlalchemy.schema import ForeignKey
 from meta import Base, metadata
 
 from gloss import Gloss
+from entry import Entry
 
 metadata = Base.metadata
 
@@ -19,8 +20,9 @@ class Sense(Base):
     __tablename__ = 'sense'
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    entry_id = Column(Integer, ForeignKey('entry.id'))
     gloss = relation(Gloss, backref='sense') 
+
+    #entry = relation(Entry, backref='sense_entry')
         
     def __str__(self):
         return u'%s' % (u', '.join([g for g in self.gloss])) 

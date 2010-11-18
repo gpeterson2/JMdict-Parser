@@ -4,8 +4,8 @@ from lxml import etree
 
 from model import Session
 from model.entry import Entry
-from model.r_ele import R_ele
-from model.k_ele import K_ele
+from model.kana_element import KanaElement
+from model.kanji_element import KanjiElement
 from model.gloss import Gloss
 from model.sense import Sense
 
@@ -43,15 +43,17 @@ class Parser(object):
 
             if tag == 'reb' and action == 'start':
 
-                reb = R_ele()
+                reb = KanaElement()
                 reb.reb = elem.text
-                entry.r_ele.append(reb)
+                #entry.kana.append(reb)
+                entry.kana = reb
 
             if tag == 'keb' and action == 'start':
 
-                keb = K_ele()
+                keb = KanjiElement()
                 keb.keb = elem.text
-                entry.k_ele.append(keb)
+                #entry.kanji.append(keb)
+                entry.kanji = keb
 
             if tag == 'sense' and action == 'start':
                 sense = Sense();
@@ -62,11 +64,15 @@ class Parser(object):
                 sense.gloss.append(gloss)
 
             if tag == 'sense' and action == 'end':
-                entry.sense.append(sense)
+                #entry.sense.append(sense)
+                entry.sense = sense
 
             if tag == 'entry' and action == 'end':
                 ses.add(entry)
                 ses.commit()
+
+                if i > 10000:
+                    break
 
         print('done reading')
         print('commiting')
