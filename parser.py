@@ -45,15 +45,13 @@ class Parser(object):
 
                 kana = KanaElement()
                 kana.element = elem.text
-                #entry.kana.append(kana)
-                entry.kana = kana
+                entry.kana.append(kana)
 
             if tag == 'keb' and action == 'start':
 
                 kanji = KanjiElement()
                 kanji.element = elem.text
-                #entry.kanji.append(kanji)
-                entry.kanji = kanji
+                entry.kanji.append(kanji)
 
             if tag == 'sense' and action == 'start':
                 sense = Sense();
@@ -64,8 +62,7 @@ class Parser(object):
                 sense.gloss.append(gloss)
 
             if tag == 'sense' and action == 'end':
-                #entry.sense.append(sense)
-                entry.sense = sense
+                entry.sense.append(sense)
 
             if tag == 'entry' and action == 'end':
                 ses.add(entry)

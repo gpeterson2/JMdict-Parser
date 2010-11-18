@@ -7,8 +7,8 @@ from sqlalchemy.schema import ForeignKey
 from meta import Base, metadata
 
 #from sense import Sense
-#from k_ele import K_ele
-#from r_ele import R_ele
+#from kana_element import KanaElement
+#from kanji_element import KanjiElement
 
 metadata = Base.metadata
 
@@ -24,12 +24,8 @@ class Entry(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     ent_seq = Column(Integer)
 
-    kanji_id = Column(Integer, ForeignKey('kanji_element.id'))
-    kana_id = Column(Integer, ForeignKey('kana_element.id'))
-    sense_id = Column(Integer, ForeignKey('sense.id'))
-
-    kanji = relationship('KanjiElement', backref='entry')
     kana = relationship('KanaElement', backref='entry')
+    kanji = relationship('KanjiElement', backref='entry')
     sense = relationship('Sense', backref='entry')
 
     def __str__(self):
