@@ -30,8 +30,8 @@ class Entry(Base):
 
     def __str__(self):
         return u'k_ele: %s r_ele: %s sense: %s' % (
-            u', '.join([s for s in self.kanji]),
-            u', '.join([s for s in self.kana]),
-            u', '.join([s for s in self.sense])
+            u', '.join([s.element for s in self.kanji]),
+            u', '.join([s.element for s in self.kana]),
+            u'' #u', '.join([unicode(s) for s in self.sense])
         )
 
