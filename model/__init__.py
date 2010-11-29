@@ -1,1 +1,1 @@
-from meta import init_model, Session
+from meta import Base, init_model, metadata, Session

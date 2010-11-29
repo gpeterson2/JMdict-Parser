@@ -23,18 +23,16 @@ def main():
     list_values = args.list_values
  
     connection_string = 'sqlite:///test.db'
-    init_model(connection_string, is_verbose)
+    models = init_model(connection_string, is_verbose)
 
     ses = Session()
 
-    # Just to ensure the database stuff is run
-    entries = ses.query(Entry).first()
-
     if filename:
-        #filename = 'test_files/JMdict'
+        models.drop_all()
+        models.create_all()
 
-        p = Parser()
-        p.parse(filename) 
+        parser = Parser()
+        parser.parse(filename) 
 
     if list_values:
         entries = ses.query(Entry).all()
