@@ -59,6 +59,17 @@ class Parser(object):
             if tag == 'gloss' and action == 'start':
                 gloss = Gloss()
                 gloss.gloss = elem.text;
+
+                lang = 'eng'
+                keys = elem.keys()
+                # Should have 0 or 1
+                if len(keys) > 0:
+                    # Not calling directly because it's a full namespace
+                    # this is easier
+                    lang = elem.get(keys[0])
+
+                gloss.lang = lang                    
+
                 sense.gloss.append(gloss)
 
             if tag == 'sense' and action == 'end':

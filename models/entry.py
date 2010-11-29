@@ -29,9 +29,11 @@ class Entry(Base):
     sense = relationship('Sense', backref='entry')
 
     def __str__(self):
-        return u'k_ele: %s r_ele: %s sense: %s' % (
-            u', '.join([s.element for s in self.kanji]),
-            u', '.join([s.element for s in self.kana]),
-            u'' #u', '.join([unicode(s) for s in self.sense])
-        )
+        kanas = u', '.join([s.element for s in self.kanji])
+        kanjis = u', '.join([s.element for s in self.kana])
+        gloss = u', '.join([ 
+            u', '.join(['%s: %s' % (g.lang, g.gloss) for g in s.gloss]) 
+            for s in self.sense])
+
+        return u'k_ele: %s r_ele: %s sense: %s' % (kanas, kanjis, gloss)
 

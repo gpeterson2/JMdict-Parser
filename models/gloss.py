@@ -22,5 +22,5 @@ class Gloss(Base):
     gloss = Column(Unicode)
         
     def __str__(self):
-        return u'%s' % (self.gloss) 
+        return u'lang: %s: %s' % (self.gloss) 
 
