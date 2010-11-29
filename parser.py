@@ -2,12 +2,12 @@
 
 from lxml import etree
 
-from model import Session
-from model.entry import Entry
-from model.kana_element import KanaElement
-from model.kanji_element import KanjiElement
-from model.gloss import Gloss
-from model.sense import Sense
+from models import Session
+from models.entry import Entry
+from models.kana_element import KanaElement
+from models.kanji_element import KanjiElement
+from models.gloss import Gloss
+from models.sense import Sense
 
 class Parser(object):
 

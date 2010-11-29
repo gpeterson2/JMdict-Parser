@@ -2,9 +2,9 @@
 
 import argparse
 
-from model import init_model, Session
+from models import init_model, Session
 
-from model.entry import Entry
+from models.entry import Entry
 from parser import Parser
 
 def main():
