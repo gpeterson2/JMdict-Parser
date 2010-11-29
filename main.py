@@ -1,9 +1,10 @@
 #! /usr/bin/env python
 
+import os
+
 import argparse
 
 from models import init_model, Session
-
 from models.entry import Entry
 from parser import Parser
 
@@ -28,6 +29,10 @@ def main():
     ses = Session()
 
     if filename:
+        if not os.path.exists(filename):
+            print('Invalid file name')
+            exit(1)
+
         models.drop_all()
         models.create_all()
 
