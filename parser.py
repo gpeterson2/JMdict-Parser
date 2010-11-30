@@ -26,6 +26,7 @@ class Parser(object):
         # Set up the parts of speach, as I don't think there's
         # a way to read them directly from the file...
         self.insert_parts_of_speech(ses)
+        pos_dict = self.get_part_of_speach_as_dict(ses)
 
         entry = Entry()
 
@@ -62,7 +63,7 @@ class Parser(object):
                 sense = Sense();
 
             if tag == 'pos' and action == 'start':
-                print('pos: %s' % elem.text)
+                sense.pos.append(pos_dict[elem.text])
 
             if tag == 'gloss' and action == 'start':
                 gloss = Gloss()
@@ -229,3 +230,8 @@ class Parser(object):
 
         ses.commit() 
 
+    def get_part_of_speach_as_dict(self, ses):
+        ''' Gets object/id to make matching quicker'''
+
+        poss = ses.query(PartOfSpeach).all() 
+        return dict([(p.text, p) for p in poss]) 

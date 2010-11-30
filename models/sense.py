@@ -11,6 +11,11 @@ from entry import Entry
 
 metadata = Base.metadata
 
+sense_pos_table = Table('sense_pos', Base.metadata,
+    Column('sense_id', Integer, ForeignKey('sense.id')),
+    Column('pos_id', Integer, ForeignKey('part_of_speach.id'))
+)
+
 class Sense(Base):
     '''The sense element will record the translational equivalent of the 
     Japanese word, plus other related information. Where there are several 
@@ -21,6 +26,9 @@ class Sense(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     gloss = relationship(Gloss, backref='sense') 
+    pos = relationship('PartOfSpeach',
+        secondary=sense_pos_table,
+        backref='sense')
 
     entry_id = Column(Integer, ForeignKey('entry.id'))
 
