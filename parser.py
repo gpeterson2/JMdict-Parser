@@ -63,7 +63,13 @@ class Parser(object):
                 sense = Sense();
 
             if tag == 'pos' and action == 'start':
-                sense.pos.append(pos_dict[elem.text])
+                try:
+                    pos = pos_dict[elem.text]
+                except KeyError:
+                    # Shouldn't happen, of course...
+                    pass
+                    #print(elem.text)
+                sense.pos.append(pos)
 
             if tag == 'gloss' and action == 'start':
                 gloss = Gloss()
