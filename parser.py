@@ -37,6 +37,8 @@ class Parser(object):
         # on what are practically global values...oh well.
         entry_id = 0
         gloss_id = 0
+        kana_id = 0
+        kanji_id = 0
 
         for i, (action, elem) in enumerate(context):
 
@@ -56,15 +58,17 @@ class Parser(object):
 
                 kana = elem.text
                 if kana and not kana in kanas:
-                    kanas.add(kana)
-                    kana_entries.append((ent_seq, kana))
+                    kana_id += 1
+                    kanas.add((kana_id, kana))
+                    kana_entries.append((entry_id, kana_id))
 
             if tag == 'keb' and action == 'start':
 
                 kanji = elem.text
                 if kanji and not kanji in kanjis:
-                    kanjis.add(kanji)
-                    kanji_entries.append((ent_seq, kanji))
+                    kanji_id += 1
+                    kanjis.add((kanji_id, kanji))
+                    kanji_entries.append((entry_id, kanji_id))
 
                 #entry.kanji.append(kanji)
 
@@ -131,15 +135,13 @@ class Parser(object):
         sql = "insert into entry(id, entry) values(?, ?);"
         self.write_from_list(conn, entries, sql, table)
             
-        table = "create table kana ( kana varchar );"
-        sql = "insert into kana(kana) values(?)"
-        # Was trying to iterate over text...
-        self.write_from_list(conn, [(k,) for k in kanas], sql, table)
+        table = "create table kana ( id integer primary key, kana varchar );"
+        sql = "insert into kana(id, kana) values(?, ?)"
+        self.write_from_list(conn, kanas, sql, table)
 
-        table = "create table kanji ( kanji varchar );"
-        sql = "insert into kanji(kanji) values(?);"
-        # Was trying to iterate over text...
-        self.write_from_list(conn, [(k,) for k in kanjis], sql, table)
+        table = "create table kanji ( id integer primary key, kanji varchar );"
+        sql = "insert into kanji(id, kanji) values(?, ?);"
+        self.write_from_list(conn, kanjis, sql, table)
 
         table = "create table gloss ( id integer primary key, gloss varchar, pos, lang varchar );"
         sql = "insert into gloss(id, gloss, pos, lang) values(?, ?, ?, ?);"
@@ -157,6 +159,19 @@ class Parser(object):
         table = "create table gloss_entry ( entry_id, gloss_id );"
         sql = """insert into gloss_entry(entry_id, gloss_id) values(?, ?);"""
         self.write_from_list(conn, gloss_entries, sql, table)
+
+        cur = conn.cursor()
+        sql = """
+            create view list_all as
+            select entry.entry, kana.kana, kanji.kanji
+            from entry
+            join kana_entry on entry.id = kana_entry.entry_id
+            join kanji_entry on entry.id = kanji_entry.entry_id
+            join kana on kana_entry.kana_id = kana.id
+            join kanji on kanji_entry.kanji_id = kanji.id;
+        """
+        cur.execute(sql)
+        conn.commit()
 
         conn.close()
 
