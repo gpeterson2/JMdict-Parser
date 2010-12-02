@@ -1,79 +1,78 @@
 #! /usr/bin/env python
 
-from lxml import etree
+import codecs
+import os
 
-from models import Session
-from models.entry import Entry
-from models.kana_element import KanaElement
-from models.kanji_element import KanjiElement
-from models.gloss import Gloss
-from models.sense import Sense
-from models.part_of_speach import PartOfSpeach
+from lxml import etree
 
 class Parser(object):
 
-    def parse(self, filename):
-        #'test_files/JMdict'
+    def __init__(self, infile):
+        self.infile = infile
 
-        xml = open(filename, 'r')
+    def parse(self):
+
+        xml = open(self.infile, 'r')
 
         events = ('start', 'end')
         context = etree.iterparse(xml, events=events)
 
-        ses = Session()
-        #ses.begin()
-
         # Set up the parts of speach, as I don't think there's
         # a way to read them directly from the file...
-        self.insert_parts_of_speech(ses)
-        pos_dict = self.get_part_of_speach_as_dict(ses)
+        pos_dict = self.insert_parts_of_speech()
 
-        entry = Entry()
+        entries = []
+        kanas = []
+        kanjis = set()
+        glosses = []
 
-        print('start reading')
-
-        # looks like there 142665 total r_ele
-        # still taking forever...
-        # OK, putting everything in a dict, and then inserting sped things up
-        # I don't really want that to be the overall pattern, though
         for i, (action, elem) in enumerate(context):
 
             tag = elem.tag
 
-            if tag == 'entry' and action == 'start':
-                entry = Entry()
-                ses.begin()
+            #if tag == 'entry' and action == 'start':
+                #entry = Entry()
+                #ses.begin()
 
             if tag == 'ent_seq' and action == 'start':
-                entry.ent_seq = elem.text
+                ent_seq = elem.text
+                if ent_seq:
+                    entries.append(ent_seq)
 
             if tag == 'reb' and action == 'start':
 
-                kana = KanaElement()
-                kana.element = elem.text
-                entry.kana.append(kana)
+                kana = elem.text
+                if kana:
+                    kanas.append(kana)
 
             if tag == 'keb' and action == 'start':
 
-                kanji = KanjiElement()
-                kanji.element = elem.text
-                entry.kanji.append(kanji)
+                kanji = elem.text
+                if kanji and not kanji in kanjis:
+                    kanjis.add(kanji)
+
+                #entry.kanji.append(kanji)
 
             if tag == 'sense' and action == 'start':
-                sense = Sense();
+                #sense = Sense();
+                pass
 
             if tag == 'pos' and action == 'start':
                 try:
                     pos = pos_dict[elem.text]
                 except KeyError:
                     # Shouldn't happen, of course...
-                    pass
-                    #print(elem.text)
-                sense.pos.append(pos)
+
+                    e_id = '-1'
+                    try:
+                        e_id = entry.ent_seq
+                    except:
+                        pass
+                    print('%s POS error: %s' % (e_id, elem.text))
+                #sense.pos.append(pos)
 
             if tag == 'gloss' and action == 'start':
-                gloss = Gloss()
-                gloss.gloss = elem.text;
+                gloss = elem.text
 
                 lang = 'eng'
                 keys = elem.keys()
@@ -83,29 +82,59 @@ class Parser(object):
                     # this is easier
                     lang = elem.get(keys[0])
 
-                gloss.lang = lang                    
+                if gloss:
+                    gloss = gloss.replace('"', '""'); 
+                    glosses.append((gloss, lang))
 
-                sense.gloss.append(gloss)
+                #sense.gloss.append(gloss)
 
             if tag == 'sense' and action == 'end':
-                entry.sense.append(sense)
+                #entry.sense.append(sense)
+                pass
 
             if tag == 'entry' and action == 'end':
-                ses.add(entry)
-                ses.commit()
-
                 # to make testing easier
-                if i > 1000:
-                    break
+                #if i > 1000:
+                    #break
+                pass
 
-        print('done reading')
-        print('commiting')
+        if not os.path.exists('sql'):
+            os.mkdir('sql')
 
-        #ses.commit()
+        table = "create table part_of_speach ( code varchar, text varchar);\n"
+        sql = """insert into part_of_speach(code, text) values('%s', "%s");\n"""
+        pos_list = [(v, k.replace("'", "\'")) for k, v in pos_dict.items()]
+        self.write_from_list('sql/pos.sql', pos_list, sql, table)
 
-        print('done commiting')
+        table = "create table entry ( entry );\n"
+        sql = "insert into entry values(%s);\n"
+        self.write_from_list('sql/entries.sql', entries, sql, table)
+            
+        table = "create table kana ( kana varchar );\n"
+        sql = "insert into kana values('%s');\n"
+        self.write_from_list('sql/kana.sql', kanas, sql, table)
 
-    def insert_parts_of_speech(self, ses):
+        table = "create table kanji ( kanji varchar );\n"
+        sql = "insert into kanji values('%s');\n"
+        self.write_from_list('sql/kanji.sql', kanjis, sql, table)
+
+        table = "create table gloss ( gloss varchar, lang varchar );\n"
+        sql = """insert into gloss(gloss, lang) values("%s", '%s');\n"""
+        self.write_from_list('sql/gloss.sql', glosses, sql, table)
+
+    def write_from_list(self, filename, items, sql, table_sql=None):
+        with codecs.open(filename, 'w', 'utf-8') as f:
+            f.write('begin transaction;\n');
+
+            if table_sql:
+                f.write(table_sql)
+            
+            for item in items:
+                f.write(sql % item);
+            f.write('commit;\n');
+        
+
+    def insert_parts_of_speech(self):
         ''' Inserts parts of speach codes/text.
 
             These are in the xml file, but not easy to get at, so it 
@@ -225,19 +254,5 @@ class Parser(object):
             ('vulg', 'vulgar expression or word'),
         ]
 
-        ses.begin()
+        return dict([(text, code) for code, text in poss])
 
-        for abbr, text in poss:
-            pos = PartOfSpeach()
-            pos.code = abbr
-            pos.text = text
-
-            ses.add(pos)
-
-        ses.commit() 
-
-    def get_part_of_speach_as_dict(self, ses):
-        ''' Gets object/id to make matching quicker'''
-
-        poss = ses.query(PartOfSpeach).all() 
-        return dict([(p.text, p) for p in poss]) 

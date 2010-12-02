@@ -36,8 +36,7 @@ def main():
         models.drop_all()
         models.create_all()
 
-        parser = Parser()
-        parser.parse(filename) 
+        Parser(filename).parse()
 
     if list_values:
         entries = ses.query(Entry).all()
