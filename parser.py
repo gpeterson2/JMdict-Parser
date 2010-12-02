@@ -28,6 +28,7 @@ class Parser(object):
         kanjis = set()
         kanji_entries = []
         glosses = []
+        gloss_entries = [] # Not sure you really need a "sense" entry...
 
         for i, (action, elem) in enumerate(context):
 
@@ -88,7 +89,8 @@ class Parser(object):
 
                 if gloss:
                     gloss = gloss.replace('"', '""'); 
-                    glosses.append((gloss, lang))
+                    glosses.append((gloss, pos, lang))
+                    gloss_entries.append((ent_seq, gloss, pos, lang))
 
                 #sense.gloss.append(gloss)
 
@@ -130,8 +132,8 @@ class Parser(object):
         # Was trying to iterate over text...
         self.write_from_list(conn, [(k,) for k in kanjis], sql, table)
 
-        table = "create table gloss ( gloss varchar, lang varchar );"
-        sql = "insert into gloss(gloss, lang) values(?, ?);"
+        table = "create table gloss ( gloss varchar, pos, lang varchar );"
+        sql = "insert into gloss(gloss, pos, lang) values(?, ?, ?);"
         self.write_from_list(conn, glosses, sql, table)
 
         # Join tables
@@ -142,6 +144,11 @@ class Parser(object):
         table = "create table kanji_entry ( entry_id varchar, kanji_id varchar );"
         sql = "insert into kanji_entry(entry_id, kanji_id) values(?, ?);"
         self.write_from_list(conn, kanji_entries, sql, table)
+
+        #gloss_entries.append(entry_id, gloss, pos, lang)
+        table = "create table gloss_entry ( entry_id varchar, gloss varchar, pos varchar, lang varchar );"
+        sql = "insert into gloss_entry values(?, ?, ?, ?);"
+        self.write_from_list(conn, gloss_entries, sql, table)
 
         conn.close()
 
