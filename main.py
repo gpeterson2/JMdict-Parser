@@ -33,8 +33,8 @@ def main():
             print('Invalid file name')
             exit(1)
 
-        models.drop_all()
-        models.create_all()
+        #models.drop_all()
+        #models.create_all()
 
         Parser(filename).parse()
 

@@ -2,6 +2,7 @@
 
 import codecs
 import os
+import sqlite3
 
 from lxml import etree
 
@@ -22,7 +23,7 @@ class Parser(object):
         pos_dict = self.insert_parts_of_speech()
 
         entries = []
-        kanas = []
+        kanas = set()
         kanjis = set()
         glosses = []
 
@@ -42,8 +43,8 @@ class Parser(object):
             if tag == 'reb' and action == 'start':
 
                 kana = elem.text
-                if kana:
-                    kanas.append(kana)
+                if kana and not kana in kanas:
+                    kanas.add(kana)
 
             if tag == 'keb' and action == 'start':
 
@@ -98,41 +99,51 @@ class Parser(object):
                     #break
                 pass
 
-        if not os.path.exists('sql'):
-            os.mkdir('sql')
+        connection_string = 'test.db'
+        if os.path.exists(connection_string):
+            os.remove(connection_string)
+        conn = sqlite3.connect(connection_string)
 
-        table = "create table part_of_speach ( code varchar, text varchar);\n"
-        sql = """insert into part_of_speach(code, text) values('%s', "%s");\n"""
-        pos_list = [(v, k.replace("'", "\'")) for k, v in pos_dict.items()]
-        self.write_from_list('sql/pos.sql', pos_list, sql, table)
+        cur = conn.cursor()
 
-        table = "create table entry ( entry );\n"
-        sql = "insert into entry values(%s);\n"
-        self.write_from_list('sql/entries.sql', entries, sql, table)
+        table = "create table part_of_speach ( code varchar, text varchar);"
+        sql = 'insert into part_of_speach(code, text) values(?, ?);'
+        poss = [(v, k.replace("'", "\'")) for k, v in pos_dict.items()]
+        self.write_from_list(conn, poss, sql, table)
+
+        table = "create table entry ( entry );"
+        sql = "insert into entry(entry) values(?);"
+        # Was trying to iterate over text...
+        self.write_from_list(conn, [(e,) for e in entries], sql, table)
             
-        table = "create table kana ( kana varchar );\n"
-        sql = "insert into kana values('%s');\n"
-        self.write_from_list('sql/kana.sql', kanas, sql, table)
+        table = "create table kana ( kana varchar );"
+        sql = "insert into kana(kana) values(?)"
+        # Was trying to iterate over text...
+        self.write_from_list(conn, [(k,) for k in kanas], sql, table)
 
-        table = "create table kanji ( kanji varchar );\n"
-        sql = "insert into kanji values('%s');\n"
-        self.write_from_list('sql/kanji.sql', kanjis, sql, table)
+        table = "create table kanji ( kanji varchar );"
+        sql = "insert into kanji(kanji) values(?);"
+        # Was trying to iterate over text...
+        self.write_from_list(conn, [(k,) for k in kanjis], sql, table)
 
-        table = "create table gloss ( gloss varchar, lang varchar );\n"
-        sql = """insert into gloss(gloss, lang) values("%s", '%s');\n"""
-        self.write_from_list('sql/gloss.sql', glosses, sql, table)
+        table = "create table gloss ( gloss varchar, lang varchar );"
+        sql = "insert into gloss(gloss, lang) values(?, ?);"
+        self.write_from_list(conn, glosses, sql, table)
 
-    def write_from_list(self, filename, items, sql, table_sql=None):
-        with codecs.open(filename, 'w', 'utf-8') as f:
-            f.write('begin transaction;\n');
+        conn.close()
 
-            if table_sql:
-                f.write(table_sql)
-            
-            for item in items:
-                f.write(sql % item);
-            f.write('commit;\n');
-        
+    def write_from_list(self, conn, items, sql, table_sql=None):
+        cur = conn.cursor()
+
+        if table_sql:
+            cur.execute(table_sql)
+
+        try:
+            cur.executemany(sql, items)
+        except Exception as e:
+            print('%s\n\n%s' % (table_sql, e))
+
+        conn.commit()
 
     def insert_parts_of_speech(self):
         ''' Inserts parts of speach codes/text.
