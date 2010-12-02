@@ -24,7 +24,9 @@ class Parser(object):
 
         entries = []
         kanas = set()
+        kana_entries = []
         kanjis = set()
+        kanji_entries = []
         glosses = []
 
         for i, (action, elem) in enumerate(context):
@@ -45,12 +47,14 @@ class Parser(object):
                 kana = elem.text
                 if kana and not kana in kanas:
                     kanas.add(kana)
+                    kana_entries.append((ent_seq, kana))
 
             if tag == 'keb' and action == 'start':
 
                 kanji = elem.text
                 if kanji and not kanji in kanjis:
                     kanjis.add(kanji)
+                    kanji_entries.append((ent_seq, kanji))
 
                 #entry.kanji.append(kanji)
 
@@ -59,17 +63,16 @@ class Parser(object):
                 pass
 
             if tag == 'pos' and action == 'start':
-                try:
-                    pos = pos_dict[elem.text]
-                except KeyError:
-                    # Shouldn't happen, of course...
+                pos = None
 
-                    e_id = '-1'
+                pos_text = elem.text
+                if pos_text:
                     try:
-                        e_id = entry.ent_seq
-                    except:
-                        pass
-                    print('%s POS error: %s' % (e_id, elem.text))
+                        pos = pos_dict[pos_text]
+                    except KeyError:
+                        # Shouldn't happen, of course...
+                        print('%s %s' % (ent_seq, pos_text))
+
                 #sense.pos.append(pos)
 
             if tag == 'gloss' and action == 'start':
@@ -106,6 +109,7 @@ class Parser(object):
 
         cur = conn.cursor()
 
+        # Unique tables
         table = "create table part_of_speach ( code varchar, text varchar);"
         sql = 'insert into part_of_speach(code, text) values(?, ?);'
         poss = [(v, k.replace("'", "\'")) for k, v in pos_dict.items()]
@@ -129,6 +133,15 @@ class Parser(object):
         table = "create table gloss ( gloss varchar, lang varchar );"
         sql = "insert into gloss(gloss, lang) values(?, ?);"
         self.write_from_list(conn, glosses, sql, table)
+
+        # Join tables
+        table = "create table kana_entry ( entry_id varchar, kana_id varchar );"
+        sql = "insert into kana_entry(entry_id, kana_id) values(?, ?);"
+        self.write_from_list(conn, kana_entries, sql, table)
+
+        table = "create table kanji_entry ( entry_id varchar, kanji_id varchar );"
+        sql = "insert into kanji_entry(entry_id, kanji_id) values(?, ?);"
+        self.write_from_list(conn, kanji_entries, sql, table)
 
         conn.close()
 
