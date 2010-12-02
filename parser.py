@@ -30,6 +30,14 @@ class Parser(object):
         glosses = []
         gloss_entries = [] # Not sure you really need a "sense" entry...
 
+        # really stupid idea...athough inserting an id works with sqlite.
+        # basically doing it to make defining join tables easier.
+        # 0 so that the value can be incremented first off and stay the same
+        # throuhout the life of the entry element...it feels so bad to depend
+        # on what are practically global values...oh well.
+        entry_id = 0
+        gloss_id = 0
+
         for i, (action, elem) in enumerate(context):
 
             tag = elem.tag
@@ -41,7 +49,8 @@ class Parser(object):
             if tag == 'ent_seq' and action == 'start':
                 ent_seq = elem.text
                 if ent_seq:
-                    entries.append(ent_seq)
+                    entry_id += 1
+                    entries.append((entry_id, ent_seq))
 
             if tag == 'reb' and action == 'start':
 
@@ -88,9 +97,10 @@ class Parser(object):
                     lang = elem.get(keys[0])
 
                 if gloss:
+                    gloss_id += 1
                     gloss = gloss.replace('"', '""'); 
-                    glosses.append((gloss, pos, lang))
-                    gloss_entries.append((ent_seq, gloss, pos, lang))
+                    glosses.append((gloss_id, gloss, pos, lang))
+                    gloss_entries.append((entry_id, gloss_id))
 
                 #sense.gloss.append(gloss)
 
@@ -117,10 +127,9 @@ class Parser(object):
         poss = [(v, k.replace("'", "\'")) for k, v in pos_dict.items()]
         self.write_from_list(conn, poss, sql, table)
 
-        table = "create table entry ( entry );"
-        sql = "insert into entry(entry) values(?);"
-        # Was trying to iterate over text...
-        self.write_from_list(conn, [(e,) for e in entries], sql, table)
+        table = "create table entry ( id integer primary key, entry );"
+        sql = "insert into entry(id, entry) values(?, ?);"
+        self.write_from_list(conn, entries, sql, table)
             
         table = "create table kana ( kana varchar );"
         sql = "insert into kana(kana) values(?)"
@@ -132,8 +141,8 @@ class Parser(object):
         # Was trying to iterate over text...
         self.write_from_list(conn, [(k,) for k in kanjis], sql, table)
 
-        table = "create table gloss ( gloss varchar, pos, lang varchar );"
-        sql = "insert into gloss(gloss, pos, lang) values(?, ?, ?);"
+        table = "create table gloss ( id integer primary key, gloss varchar, pos, lang varchar );"
+        sql = "insert into gloss(id, gloss, pos, lang) values(?, ?, ?, ?);"
         self.write_from_list(conn, glosses, sql, table)
 
         # Join tables
@@ -145,9 +154,8 @@ class Parser(object):
         sql = "insert into kanji_entry(entry_id, kanji_id) values(?, ?);"
         self.write_from_list(conn, kanji_entries, sql, table)
 
-        #gloss_entries.append(entry_id, gloss, pos, lang)
-        table = "create table gloss_entry ( entry_id varchar, gloss varchar, pos varchar, lang varchar );"
-        sql = "insert into gloss_entry values(?, ?, ?, ?);"
+        table = "create table gloss_entry ( entry_id, gloss_id );"
+        sql = """insert into gloss_entry(entry_id, gloss_id) values(?, ?);"""
         self.write_from_list(conn, gloss_entries, sql, table)
 
         conn.close()
