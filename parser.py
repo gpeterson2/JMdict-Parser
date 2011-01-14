@@ -1,4 +1,5 @@
 #! /usr/bin/env python
+# -*- coding: utf-8 -*-
 
 import codecs
 import os
@@ -40,64 +41,71 @@ class Parser(object):
         kana_id = 0
         kanji_id = 0
 
+        kana_dict = {}
+        kanji_dict = {}
+        gloss_dict = {}
+
         for i, (action, elem) in enumerate(context):
 
             tag = elem.tag
-
-            #if tag == 'entry' and action == 'start':
-                #entry = Entry()
-                #ses.begin()
+            text = elem.text
+            if not text:
+                continue
 
             if tag == 'ent_seq' and action == 'start':
                 ent_seq = elem.text
-                if ent_seq:
-                    entry_id += 1
-                    entries.append((entry_id, ent_seq))
+
+                entry_id += 1
+                entries.append((entry_id, ent_seq))
 
             if tag == 'reb' and action == 'start':
 
                 kana = elem.text
-                if kana and not kana in kanas:
+
+                if kana in kana_dict:
+                    kana_entries.append((entry_id, kana_dict[kana]))
+                else:
                     kana_id += 1
-                    kanas.add((kana_id, kana))
-                    kana_entries.append((entry_id, kana_id))
+                    kana_dict[kana] = kana_id
+
+                if entry_id == 33775:
+                    print(kana.encode('utf-8'))
+                    print(kana_id)
+                    print(kana_dict[kana])
 
             if tag == 'keb' and action == 'start':
 
                 kanji = elem.text
-                if kanji and not kanji in kanjis:
-                    kanji_id += 1
-                    kanjis.add((kanji_id, kanji))
-                    kanji_entries.append((entry_id, kanji_id))
 
-                #entry.kanji.append(kanji)
+                if kanji in kanji_dict:
+                    kanji_entries.append((entry_id, kanji_dict[kanji]))
+                else:
+                    kanji_id += 1
+                    kanji_dict[kanji] = kanji_id
+                    #if u'上' in unicode(kanji):
+                        #print(kanji.encode('utf-8'))
 
             if tag == 'sense' and action == 'start':
-                #sense = Sense();
                 pass
 
             if tag == 'pos' and action == 'start':
                 pos = None
 
+                # Used in gloss
                 pos_text = elem.text
-                if pos_text:
-                    try:
-                        pos = pos_dict[pos_text]
-                    except KeyError:
-                        # Shouldn't happen, of course...
-                        print('%s %s' % (ent_seq, pos_text))
-
-                #sense.pos.append(pos)
+                pos = pos_dict.get(pos_text, '')
+                # Shouldn't happen, of course...
+                #print('Can\'t find: %s %s' % (ent_seq, pos_text))
 
             if tag == 'gloss' and action == 'start':
                 gloss = elem.text
 
                 lang = 'eng'
                 keys = elem.keys()
+
                 # Should have 0 or 1
                 if len(keys) > 0:
-                    # Not calling directly because it's a full namespace
-                    # this is easier
+                    # This is easier than calling the namespace directly
                     lang = elem.get(keys[0])
 
                 if gloss:
@@ -106,16 +114,11 @@ class Parser(object):
                     glosses.append((gloss_id, gloss, pos, lang))
                     gloss_entries.append((entry_id, gloss_id))
 
-                #sense.gloss.append(gloss)
-
+            # Not entirely sure this is even necessary...
             if tag == 'sense' and action == 'end':
-                #entry.sense.append(sense)
                 pass
 
             if tag == 'entry' and action == 'end':
-                # to make testing easier
-                #if i > 1000:
-                    #break
                 pass
 
         connection_string = 'test.db'
@@ -137,10 +140,15 @@ class Parser(object):
             
         table = "create table kana ( id integer primary key, kana varchar );"
         sql = "insert into kana(id, kana) values(?, ?)"
+        # blah
+        kanas = [(v, k) for (k, v) in kana_dict.items()]
+        kanas.sort(lambda x, y: x[0] - y[0])
         self.write_from_list(conn, kanas, sql, table)
 
         table = "create table kanji ( id integer primary key, kanji varchar );"
         sql = "insert into kanji(id, kanji) values(?, ?);"
+        kanjis = [(v, k) for (k, v) in kanji_dict.items()]
+        kanjis.sort(lambda x, y: x[0] - y[0])
         self.write_from_list(conn, kanjis, sql, table)
 
         table = "create table gloss ( id integer primary key, gloss varchar, pos, lang varchar );"
@@ -167,8 +175,8 @@ class Parser(object):
             from entry
             join kana_entry on entry.id = kana_entry.entry_id
             join kanji_entry on entry.id = kanji_entry.entry_id
-            join kana on kana_entry.kana_id = kana.id
-            join kanji on kanji_entry.kanji_id = kanji.id;
+            left join kana on kana_entry.kana_id = kana.id
+            left join kanji on kanji_entry.kanji_id = kanji.id;
         """
         cur.execute(sql)
         conn.commit()
