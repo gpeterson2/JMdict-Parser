@@ -229,6 +229,18 @@ def write_list_to_database(parsed_object):
     items = parsed_object.glosses
     write_from_list(conn, items, sql, table)
 
+    table = "create table warehouse (id integer primary key, entry int, kana varchar, kanji varchar, gloss varchar); "
+    sql = "insert into warehouse(entry, kana, kanji, gloss) values(?, ?, ?, ?)"
+    items = [
+        (
+            entry.entry_seq, 
+            u','.join(entry.kanas),
+            u','.join(entry.kanjis), 
+            u','.join([g for g in entry.glosses])
+        ) 
+        for entry in parsed_object.entries]
+    write_from_list(conn, items, sql, table)
+
     # Join tables
     sql = "select id, entry from entry"
     entry_dict = create_dict_from_sql(conn, sql) 
