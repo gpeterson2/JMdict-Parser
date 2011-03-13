@@ -28,11 +28,23 @@ class Entry(object):
         For a given entry contains all kana entries,
         all kanji entires, and all gloss entires.
     '''
+
+    # TODO - should eventually be replaced by ORM
+
     def __init__(self):
         self.entry_seq = 0
         self.kanas = []
         self.kanjis = []
         self.glosses = []
+
+    def __str__(self):
+        return u'{0} [{1}] [{2}] {3}'.format(
+            self.entry_seq, 
+            u','.join(self.kanas), 
+            u','.join(self.kanjis), 
+            #u','.join(unicode(self.glosses))
+            u','.join([g for g in self.glosses])
+        )
 
 class Parser(object):
 
@@ -57,7 +69,8 @@ class Parser(object):
         if not self.message_out:
             return
 
-        self.message_out.write(msg + '\n')
+        #self.message_out.write(msg + u'\n')
+        self.message_out.write(u'{0}\n'.format(msg).encode('utf-8'))
         self.message_out.flush()
 
     def parse(self):
@@ -77,7 +90,7 @@ class Parser(object):
         kanjis = set()
         glosses = set()
 
-        self.__write_output('start reading')
+        self.__write_output(u'start reading')
 
         entry = Entry()
         for i, (action, elem) in enumerate(context):
@@ -85,17 +98,15 @@ class Parser(object):
             tag = elem.tag
             text = elem.text
 
-
             if not text:
                 continue
 
+            # the starting element
             if tag == 'ent_seq' and action == 'start':
                 ent_seq = elem.text
                 entry = Entry()
-        #        entries.add(ent_seq)
 
                 entry.entry_seq = ent_seq 
-                #print('{0} - {1}'.format(ent_seq, entry.entry_seq))
 
             if tag == 'reb' and action == 'start':
                 kana = elem.text
@@ -112,14 +123,18 @@ class Parser(object):
             if tag == 'sense' and action == 'start':
                 pass
 
+            # not used until it hits the gloss entry
             if tag == 'pos' and action == 'start':
                 pos = None
 
                 # Used in gloss
                 pos_text = elem.text
                 pos = pos_dict.get(pos_text, '')
+
                 # Shouldn't happen, of course...
-                #print('Can\'t find: %s %s' % (ent_seq, pos_text))
+                # but write an error message if the text isn't found.
+                if not pos:
+                    self.__write_output(u'Error: Can\'t find: {0} {1}'.format(ent_seq, pos_text))
 
             if tag == 'gloss' and action == 'start':
                 gloss = elem.text
@@ -144,8 +159,11 @@ class Parser(object):
             if tag == 'entry' and action == 'end':
                 entries.add(entry)
 
-        self.__write_output('done reading')
-        self.__write_output('start saving')
+        self.__write_output(u'done reading')
+        self.__write_output(u'start saving')
+
+        #for entry in entries:
+            #self.__write_output(unicode(entry))
 
         parsed_object = ParsedObject()
         parsed_object.entries = list(entries)
@@ -155,6 +173,5 @@ class Parser(object):
         
         write_list_to_database(parsed_object)
 
-        self.__write_output('done saving')
-
+        self.__write_output(u'done saving')
 
