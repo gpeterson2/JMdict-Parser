@@ -5,6 +5,16 @@ import os
 import sqlite3
 
 def write_from_list(conn, items, sql, table_sql=None):
+    ''' General function to write lists of items to table.
+
+        Optionally creates a table as well.
+
+        :param conn: The connection object
+        :param items: A list of type items to write.
+        :param sql: The sql statement to run.
+        :param table_sql: SQL statement to create a table if necessary.
+    '''
+
     cur = conn.cursor()
 
     if table_sql:
@@ -140,9 +150,23 @@ def get_parts_of_speach():
     return dict([(text, code) for code, text in poss])
 
 def convert_to_tuple_list(items):
+    ''' Converts single item lists to list of tuples.
+
+        A convience function.
+        
+        :param items: A list of items to convert.
+    '''
     return [(i,) for i in items]
 
 def create_dict_from_sql(conn, sql):
+    ''' For the given sql returns an entry/id dictionary
+        
+        Convience function - Basically to allow searching for id's based on 
+        items.
+
+        The sql statemen should be in the form of:
+        SELECT id, item FROM table
+    '''
     cur = conn.cursor()
     cur.execute(sql)
 
@@ -154,7 +178,19 @@ def create_dict_from_sql(conn, sql):
 
     return d
 
+# TODO - this should probably be an object which can be sub classed.
+# So that it can more easily be switched between database types.
+# Or it should use an ORM, which was the original plan before running
+# it meant waiting three hours...
 def write_list_to_database(parsed_object):
+    ''' Writes the various lists to a database. 
+    
+        :param parsed_object: An object containing lists of items to insert.
+        Entries - the dictionary entries.
+        kanas - list of unique kana entries.
+        kanji - list of unique kanji entires.
+        glosses - list of unique translation entries.
+    '''
 
     connection_string = 'test.db'
 
@@ -249,3 +285,4 @@ def write_list_to_database(parsed_object):
     conn.commit()
 
     conn.close()
+
