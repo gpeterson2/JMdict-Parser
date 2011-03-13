@@ -1,11 +1,21 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import sys
+
 from lxml import etree
 
 from data import write_list_to_database, get_parts_of_speach
 
 class ParsedObject(object):
+    ''' Convience object to hold multiple lists of items.
+        
+        Contains:
+        entries - a list of all dictionary entries.
+        kanas - a list of just unique kana entries.
+        kanjis - a list of just unique kanji entries.
+        glosses - a list of all translations. 
+    '''
     def __init__(self):
         self.entries = []
         self.kanas = []
@@ -13,6 +23,11 @@ class ParsedObject(object):
         glosses = []
 
 class Entry(object):
+    ''' An entry object.
+        
+        For a given entry contains all kana entries,
+        all kanji entires, and all gloss entires.
+    '''
     def __init__(self):
         self.entry_seq = 0
         self.kanas = []
@@ -21,14 +36,29 @@ class Entry(object):
 
 class Parser(object):
 
-    def __init__(self, infile):
+    def __init__(self, infile, message_out=None):
         ''' Reads a JMDict file.
             
             :params infile: The JMDict input file.
+            :params message_out: An output stream for parsing messages,
+                defaults to none.
         '''
+
+        # TODO - need to change the default output, maybe once I'm done it wont
+        # be necessary?
 
         self.infile = infile
         self.kana_dict = set()
+
+        self.message_out = message_out
+
+    def __write_output(self, msg):
+        ''' Writes and flushes a message to message_output. '''
+        if not self.message_out:
+            return
+
+        self.message_out.write(msg + '\n')
+        self.message_out.flush()
 
     def parse(self):
         ''' Performs the parsing of the file. '''
@@ -47,7 +77,7 @@ class Parser(object):
         kanjis = set()
         glosses = set()
 
-        print('start reading')
+        self.__write_output('start reading')
 
         entry = Entry()
         for i, (action, elem) in enumerate(context):
@@ -113,10 +143,9 @@ class Parser(object):
 
             if tag == 'entry' and action == 'end':
                 entries.add(entry)
-                #print('{0}'.format(entry.entry_seq))
 
-        print('done reading')
-        print('start saving')
+        self.__write_output('done reading')
+        self.__write_output('start saving')
 
         parsed_object = ParsedObject()
         parsed_object.entries = list(entries)
@@ -126,6 +155,6 @@ class Parser(object):
         
         write_list_to_database(parsed_object)
 
-        print('done saving')
+        self.__write_output('done saving')
 
 

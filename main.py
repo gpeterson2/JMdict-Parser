@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 
 import os
+import sys
 
 import argparse
 
@@ -36,7 +37,7 @@ def main():
         #models.drop_all()
         #models.create_all()
 
-        Parser(filename).parse()
+        Parser(filename, sys.stdout).parse()
 
     if list_values:
         entries = ses.query(Entry).all()
