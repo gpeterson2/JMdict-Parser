@@ -1,5 +1,6 @@
 #! /usr/bin/env python
 
+import codecs
 import os
 import sys
 
@@ -37,7 +38,15 @@ def main():
         #models.drop_all()
         #models.create_all()
 
-        Parser(filename, sys.stdout).parse()
+        entries = Parser(filename, sys.stdout).parse_from_file()
+        
+        #with codecs.open('output.txt', 'w', 'utf-8') as f:
+            #for e in entries:
+                #try:
+                    #f.write(unicode(e))
+                    #f.write(u'\n')
+                #except Exception as e:
+                    #print e
 
     if list_values:
         entries = ses.query(Entry).all()
