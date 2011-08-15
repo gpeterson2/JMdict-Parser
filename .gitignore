@@ -1,5 +1,6 @@
 *.pyc
 *.db
+*.gz
 test_files
 todo.txt
 JMdict

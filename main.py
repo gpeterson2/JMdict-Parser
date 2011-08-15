@@ -8,7 +8,7 @@ import argparse
 
 from models import init_model, Session
 from models.entry import Entry
-from parser import Parser
+from JMdictParser import Parser
 
 def main():
     parser = argparse.ArgumentParser(description='Import edict xml')
