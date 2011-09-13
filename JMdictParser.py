@@ -5,14 +5,15 @@ import sys
 
 from lxml import etree
 
-from data import write_list_to_database, get_parts_of_speach
+from data import write_list_to_database 
 
 __all__ = ['Entry', 'Gloss', 'Parser']
 
 # TODO - should ideally be replaced by an ORM
+# TODO - at the least it should also be moved to a separate location
 class Entry(object):
     ''' An entry object.
-        
+
         For a given entry contains all kana entries,
         all kanji entires, and all gloss entires.
     '''
@@ -37,10 +38,16 @@ class Entry(object):
         gloss_str = u','.join([g.gloss for g in self.glosses])
 
         return u'{0} [{1}] [{2}] {3}'.format(
-            unicode(self.entry_seq), 
-            u','.join(self.kanas), 
-            u','.join(self.kanjis), 
+            unicode(self.entry_seq),
+            u','.join(self.kanas),
+            u','.join(self.kanjis),
             gloss_str
+        )
+
+    def __repr__(self):
+        return 'Entry({0}, {0}, {0}, {0})'.format(
+            self.entry_seq, ','.join(repr(self.kanas)),
+            ','.join(repr(self.kanjis)), ','.join(repr(self.glosses))
         )
 
 class Gloss(object):
@@ -59,11 +66,22 @@ class Gloss(object):
     def __str__(self):
         return u'{0} {1} {2}'.format(self.gloss, self.pos, self.lang)
 
+    def __repr__(self):
+        return "Gloss('{0}', '{1}', '{2}')".format(
+            self.gloss, self.pos, self.lang
+        )
+
+    def __eq__(self, other):
+        return self.gloss == other.gloss and self.pos == other.pos and self.lang == other.lang
+
+    def __hash__(self):
+        return hash(unicode(self.gloss) + unicode(self.pos) + unicode(self.lang))
+
 class Parser(object):
 
     def __init__(self, infile=None, message_out=None):
         ''' Reads a JMDict file.
-            
+
             :params infile: The JMDict input file.
             :params message_out: An output stream for parsing messages,
                 defaults to none.
@@ -79,12 +97,14 @@ class Parser(object):
 
         self.message_out = message_out
 
+    # TODO - should move this somewhere else.
+    # At the very least it should follow an observer pattern, rather than writing and flushing now.
     def __write_output(self, msg):
         ''' Writes and flushes a message to message_output. '''
+
         if not self.message_out:
             return
 
-        #self.message_out.write(msg + u'\n')
         self.message_out.write(u'{0}\n'.format(msg).encode('utf-8'))
         self.message_out.flush()
 
@@ -117,10 +137,6 @@ class Parser(object):
         events = ('start', 'end')
         context = etree.iterparse(xml, events=events)
 
-        # Set up the parts of speach, as I don't think there's
-        # a way to read them directly from the file...
-        pos_dict = get_parts_of_speach() 
-
         entries = []
 
         self.__write_output(u'start reading')
@@ -141,7 +157,7 @@ class Parser(object):
                 ent_seq = elem.text
                 entry = Entry()
 
-                entry.entry_seq = ent_seq 
+                entry.entry_seq = ent_seq
 
             if tag == 'reb' and action == 'start':
                 kana = elem.text
@@ -160,10 +176,6 @@ class Parser(object):
             if tag == 'pos' and action == 'start':
                 pos = None
 
-                # Used in gloss
-                #pos_text = elem.text
-                #pos = pos_dict.get(pos_text, '')
-
                 pos = elem.text
 
                 # Shouldn't happen, of course...
@@ -178,12 +190,9 @@ class Parser(object):
                 keys = elem.keys()
 
                 # Should have 0 or 1
+                # This is easier than calling the namespace directly
                 if len(keys) > 0:
-                    # This is easier than calling the namespace directly
                     lang = elem.get(keys[0])
-
-                # Don't remember why I had this begin with?
-                #gloss = gloss.replace('"', '""'); 
 
                 entry.glosses.append(Gloss(gloss, pos, lang))
 
@@ -195,9 +204,6 @@ class Parser(object):
                 entries.append(entry)
 
         self.__write_output(u'done reading')
-        self.__write_output(u'start saving')
-
-        self.__write_output(u'done saving')
 
         return entries
 
