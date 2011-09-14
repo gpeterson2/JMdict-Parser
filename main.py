@@ -6,7 +6,9 @@ import os
 import sys
 
 from JMdictParser import Parser
-from data import write_list_to_database
+from data import SqliteWriter
+
+from observer import ConsoleViewer
 
 def main():
     parser = argparse.ArgumentParser(description='Import edict xml')
@@ -28,12 +30,16 @@ def main():
             print('Invalid file name')
             exit(1)
 
-        print('start reading')
-        entries = Parser(filename, sys.stdout).parse_from_file()
-        print('done reading')
-        print('start saving')
-        write_list_to_database(entries)
-        print('done saving')
+        viewer = ConsoleViewer()
+        parser = Parser()
+        parser.attach(viewer)
+
+        entries = parser.parse_from_file(filename)
+
+        
+        writer = SqliteWriter()
+        writer.attach(viewer)
+        writer.write(entries)
 
     if list_values:
         print('Not implemented')

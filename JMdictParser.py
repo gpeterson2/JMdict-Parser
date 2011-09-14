@@ -5,7 +5,7 @@ import sys
 
 from lxml import etree
 
-from data import write_list_to_database 
+from observer import Subject
 
 __all__ = ['Entry', 'Gloss', 'Parser']
 
@@ -77,45 +77,24 @@ class Gloss(object):
     def __hash__(self):
         return hash(unicode(self.gloss) + unicode(self.pos) + unicode(self.lang))
 
-class Parser(object):
+class Parser(Subject):
 
-    def __init__(self, infile=None, message_out=None):
+    def __init__(self, *args, **kwargs):
         ''' Reads a JMDict file.
 
             :params infile: The JMDict input file.
             :params message_out: An output stream for parsing messages,
                 defaults to none.
         '''
+        super(Parser, self).__init__(*args, **kwargs)
 
-        # TODO - need to change the default output, maybe once I'm done it wont
-        # be necessary?
-
-        if infile:
-            self.infile = infile
-
-        self.kana_dict = set()
-
-        self.message_out = message_out
-
-    # TODO - should move this somewhere else.
-    # At the very least it should follow an observer pattern, rather than writing and flushing now.
-    def __write_output(self, msg):
-        ''' Writes and flushes a message to message_output. '''
-
-        if not self.message_out:
-            return
-
-        self.message_out.write(u'{0}\n'.format(msg).encode('utf-8'))
-        self.message_out.flush()
+        # TODO - call super class.
 
     def parse_from_file(self, path=None):
         ''' Parse a JMDict file from the given a filepath.
 
             :param path: Path to a file to read.
         '''
-
-        if not path:
-            path = self.infile
 
         xml = open(path, 'r')
         return self.parse(xml)
@@ -135,11 +114,11 @@ class Parser(object):
         ''' Performs the parsing of the file. '''
 
         events = ('start', 'end')
-        context = etree.iterparse(xml, events=events)
+        context = etree.iterparse(xml, events=events, encoding='utf-8')
 
         entries = []
 
-        self.__write_output(u'start reading')
+        self.notify(u'start reading')
 
         pos = None
 
@@ -181,7 +160,7 @@ class Parser(object):
                 # Shouldn't happen, of course...
                 # but write an error message if the text isn't found.
                 if not pos:
-                    self.__write_output(u'Error: Can\'t find: {0} {1}'.format(ent_seq, pos_text))
+                    self.notify(u'Error: Can\'t find: {0} {1}'.format(ent_seq, pos_text))
 
             if tag == 'gloss' and action == 'start':
                 gloss = elem.text
@@ -203,7 +182,7 @@ class Parser(object):
             if tag == 'entry' and action == 'end':
                 entries.append(entry)
 
-        self.__write_output(u'done reading')
+        self.notify(u'done reading')
 
         return entries
 
