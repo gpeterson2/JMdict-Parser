@@ -6,7 +6,7 @@ import os
 import sys
 
 from JMdictParser import Parser
-from data import SqliteWriter
+from data import SqliteWriter, SqliteReader
 
 from observer import ConsoleViewer
 
@@ -35,14 +35,18 @@ def main():
         parser.attach(viewer)
 
         entries = parser.parse_from_file(filename)
-
         
         writer = SqliteWriter()
         writer.attach(viewer)
         writer.write(entries)
 
     if list_values:
-        print('Not implemented')
+        reader = SqliteReader()
+        entries = reader.read()
+
+        for entry in entries:
+            print(entry)
 
 if __name__ == '__main__':
     main()
+

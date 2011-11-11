@@ -97,7 +97,7 @@ class SqliteWriter(Writer):
         kanjis = set()
         glosses = set()
 
-        # TODO - this is taking far too much time, proably go back to 
+        # TODO - this is taking far too much time, proably go back to
         # getting this when reading.
         self.notify('start reading unique values')
         length = float(len(entries))
@@ -144,14 +144,35 @@ class SqliteWriter(Writer):
         write_from_list(conn, items, sql, table)
 
         self.notify('start writing warehouse')
-        table = "create table warehouse (id integer primary key, entry int, kana varchar, kanji varchar, gloss varchar); "
-        sql = "insert into warehouse(entry, kana, kanji, gloss) values(?, ?, ?, ?)"
+        table = """
+            create table warehouse (
+                id integer primary key,
+                entry int,
+                kana varchar,
+                kanji varchar,
+                gloss varchar,
+                pos varchar,
+                lang varchar
+            );
+        """
+        sql = """
+            insert into warehouse(
+                entry,
+                kana,
+                kanji,
+                gloss,
+                pos,
+                lang
+            ) values(?, ?, ?, ?, ?, ?)
+        """
         items = [
             (
                 entry.entry_seq,
                 u','.join(entry.kanas),
                 u','.join(entry.kanjis),
-                u','.join([g.gloss for g in entry.glosses])
+                u','.join(set([g.gloss for g in entry.glosses])),
+                u','.join(set([g.pos for g in entry.glosses])),
+                u','.join(set([g.lang for g in entry.glosses])),
             )
             for entry in entries]
         write_from_list(conn, items, sql, table)
@@ -206,6 +227,107 @@ class SqliteWriter(Writer):
         sql = """insert into gloss_entry(entry_id, gloss_id) values(?, ?);"""
         write_from_list(conn, gloss_items, sql, table)
 
+        # Second attempt at a warehouse
+        # pros: unique gloss/lang/pos entries
+        # cons: duplicate kana/kanji
+        self.notify('start writing warehouse2')
+        table = """
+            create table warehouse2 (
+                id integer primary key,
+                entry int,
+                kana varchar,
+                kanji varchar,
+                gloss varchar,
+                pos varchar,
+                lang varchar,
+                kana_count,
+                kanji_count
+            );
+        """
+        sql = """
+            insert into warehouse2 (
+                entry,
+                kana,
+                kanji,
+                gloss,
+                pos,
+                lang,
+                kana_count,
+                kanji_count
+            ) values(?, ?, ?, ?, ?, ?, ?, ?)
+        """
+        items = []
+        for entry in entries:
+            for g in entry.glosses:
+                items.append((
+                    entry.entry_seq,
+                    u','.join(entry.kanas),
+                    u','.join(entry.kanjis),
+                    g.gloss,
+                    g.pos,
+                    g.lang,
+                    len(entry.kanas),
+                    len(entry.kanjis),
+                ))
+        write_from_list(conn, items, sql, table)
+
+        # third attempt at a warehouse
+        # pros: no duplication/comma separated values
+        # cons: difficult to recreate an entry
+        self.notify('start writing warehouse3')
+        table = """
+            create table warehouse3 (
+                id integer primary key,
+                entry int,
+                kana varchar,
+                kanji varchar,
+                gloss varchar,
+                pos varchar,
+                lang varchar,
+                kana_count,
+                kanji_count
+            );
+        """
+        sql = """
+            insert into warehouse3 (
+                entry,
+                kana,
+                kanji,
+                gloss,
+                pos,
+                lang,
+                kana_count,
+                kanji_count
+            ) values(?, ?, ?, ?, ?, ?, ?, ?)
+        """
+        items = []
+        for entry in entries:
+            kana_len = len(entry.kanas)
+            kanji_len = len(entry.kanjis)
+
+            kanas = [('a', k) for k in entry.kanas]
+            kanjis = [('j', k) for k in entry.kanjis]
+
+            both = kanas + kanjis
+
+            for t, b in both:
+                a = b if t == 'a' else ''
+                j = b if t == 'j' else ''
+
+                for g in entry.glosses:
+                    items.append((
+                        entry.entry_seq,
+                        a,
+                        j,
+                        g.gloss,
+                        g.pos,
+                        g.lang,
+                        kana_len,
+                        kanji_len,
+                    ))
+
+        write_from_list(conn, items, sql, table)
+
         # TODO - this takes too long to query.
         cur = conn.cursor()
         sql = """
@@ -234,3 +356,49 @@ class SqliteWriter(Writer):
 
         self.notify('done saving')
 
+class Reader(object):
+    pass
+
+class SqliteReader(Reader):
+    def read(self):
+        connection_string = 'test.db'
+
+        if not os.path.exists(connection_string):
+            # TODO make this a specific exception, and pass this in.
+            raise Exception('Databse not found.')
+
+        conn = sqlite3.connect(connection_string)
+
+        cur = conn.cursor()
+
+        sql = """
+            select
+                entry,
+                kana,
+                kanji,
+                gloss,
+                pos,
+                lang,
+                kana_count,
+                kanji_count
+            from warehouse3
+            where lang = 'eng'
+        """
+
+        cur.execute(sql)
+
+        entries = []
+        for row in cur.fetchall():
+            entry_id = row[0]
+            kanas = unicode(row[1]).split(',')
+            kanjis = unicode(row[2]).split(',')
+            gloss = row[3]
+            pos = row[4]
+            lang = row[5]
+
+            entry = (u'{0} [{1}] ({2}) {3} {4}'
+                .format(', '.join(kanas), ', '.join(kanjis), pos, gloss, lang))
+
+            entries.append(entry.strip())
+
+        return entries
