@@ -52,9 +52,9 @@ def create_dict_from_sql(conn, sql):
 
     d = {}
     for row in cur.fetchall():
-        id = row[0]
+        item_id = row[0]
         entry = row[1]
-        d[entry] = id
+        d[entry] = item_id
 
     return d
 
@@ -97,7 +97,8 @@ class SqliteWriter(Writer):
         kanjis = set()
         glosses = set()
 
-        # TODO - this is taking far too much time, proably go back to getting this when reading.
+        # TODO - this is taking far too much time, proably go back to 
+        # getting this when reading.
         self.notify('start reading unique values')
         length = float(len(entries))
         for i, entry in enumerate(entries):
@@ -162,34 +163,50 @@ class SqliteWriter(Writer):
         sql = "select id, kana from kana"
         kana_dict = create_dict_from_sql(conn, sql)
 
-        items = []
-        for entry in entries:
-            for kana in entry.kanas:
-                items.append((entry_dict.get(entry.entry_seq, 0), kana_dict.get(kana, 0)))
-
-        self.notify('start writing kana entry join table')
-        table = "create table kana_entry ( entry_id varchar, kana_id varchar );"
-        sql = "insert into kana_entry(entry_id, kana_id) values(?, ?);"
-        write_from_list(conn, items, sql, table)
-
         sql = "select id, kanji from kanji"
         kanji_dict = create_dict_from_sql(conn, sql)
 
-        items = []
-        for entry in entries:
-            for kana in entry.kanjis:
-                items.append((entry_dict.get(entry.entry_seq, 0), kanji_dict.get(kana, 0)))
+        sql = "select id, gloss from gloss"
+        gloss_dict = create_dict_from_sql(conn, sql)
 
+        # TODO - Do this for glosses?
+        kana_items = []
+        kanji_items = []
+        gloss_items = []
+        for entry in entries:
+            entry_seq = entry_dict.get(entry.entry_seq, 0)
+
+            for kana in entry.kanas:
+                kana_id = kana_dict.get(kana, 0)
+                kana_items.append((entry_seq, kana_id))
+
+            for kana in entry.kanjis:
+                kanji_id = kanji_dict.get(kanji, 0)
+                kanji_items.append((entry_seq, kanji_id))
+
+            for gloss in entry.glosses:
+                gloss_id = gloss_dict.get(kana, 0)
+                gloss_items.append((entry_seq, gloss_id))
+
+        # set up a join table for kanas
+        self.notify('start writing kana entry join table')
+        table = "create table kana_entry ( entry_id varchar, kana_id varchar );"
+        sql = "insert into kana_entry(entry_id, kana_id) values(?, ?);"
+        write_from_list(conn, kana_items, sql, table)
+
+        # set up a join table for kanjis.
         self.notify('start writing kanji entry join table')
         table = "create table kanji_entry (entry_id varchar, kanji_id varchar );"
         sql = "insert into kanji_entry(entry_id, kanji_id) values(?, ?);"
-        write_from_list(conn, items, sql, table)
+        write_from_list(conn, kanji_items, sql, table)
 
+        # set up a join table for glosses.
         self.notify('start writing gloss entry join table')
-        #table = "create table gloss_entry ( entry_id, gloss_id );"
-        #sql = """insert into gloss_entry(entry_id, gloss_id) values(?, ?);"""
-        #write_from_list(conn, gloss_entries, sql, table)
+        table = "create table gloss_entry ( entry_id, gloss_id );"
+        sql = """insert into gloss_entry(entry_id, gloss_id) values(?, ?);"""
+        write_from_list(conn, gloss_items, sql, table)
 
+        # TODO - this takes too long to query.
         cur = conn.cursor()
         sql = """
             create view list_all as
