@@ -5,10 +5,9 @@ import codecs
 import os
 import sys
 
-from JMdictParser import Parser
-from data import SqliteWriter, SqliteReader
-
-from observer import ConsoleViewer
+from jmdict.parser.jmdict import Parser
+from jmdict.data import SqliteWriter, SqliteReader
+from jmdict.utils.observer import ConsoleViewer
 
 def main():
     parser = argparse.ArgumentParser(description='Import edict xml')
@@ -35,7 +34,7 @@ def main():
         parser.attach(viewer)
 
         entries = parser.parse_from_file(filename)
-        
+
         writer = SqliteWriter()
         writer.attach(viewer)
         writer.write(entries)
