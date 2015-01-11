@@ -3,7 +3,7 @@
 
 import unittest
 
-from parser import Parser, Entry, Gloss
+from jmdict.parser.jmdict import Parser, Entry, Gloss
 
 class TestJmdictParser(unittest.TestCase):
     def test_entry_to_string(self):
@@ -15,7 +15,7 @@ class TestJmdictParser(unittest.TestCase):
             Gloss(u'Abkürzung für "siehe oben"', u'noun', u'ger'),
         ]
 
-        e = Entry(entry_seq, kanas, kanjis, glosses) 
+        e = Entry(entry_seq, kanas, kanjis, glosses)
 
         expected = u'1 [どうじょう] [仝] "as above" mark,Abkürzung für "siehe oben"'
         result = unicode(e)
