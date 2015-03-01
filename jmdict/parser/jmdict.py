@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import sys
+import gzip
 
 from lxml import etree
 
@@ -96,8 +97,13 @@ class Parser(Subject):
             :param path: Path to a file to read.
         '''
 
-        xml = open(path, 'r')
-        return self.parse(xml)
+        f = None
+        if path.endswith('.gz'):
+            f = gzip.open(path, 'r')
+        else:
+            # assume xml
+            f = open(path, 'r')
+        return self.parse(f)
 
     def parse_from_string(self, data):
         ''' Parse a JMDict string.
