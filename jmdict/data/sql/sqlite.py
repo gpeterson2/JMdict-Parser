@@ -4,7 +4,8 @@ import codecs
 import os
 import sqlite3
 
-from jmdict.utils.observer import Subject
+from core.data.writer import Writer
+from core.utils.observer import Subject
 
 def write_from_list(conn, items, sql, table_sql=None):
     ''' General function to write lists of items to table.
@@ -57,13 +58,6 @@ def create_dict_from_sql(conn, sql):
         d[entry] = item_id
 
     return d
-
-class Writer(Subject):
-    def __init__(self, *args, **kwargs):
-        super(Writer, self).__init__(*args, **kwargs)
-
-    def write(self):
-        pass
 
 # TODO - this should probably be an object which can be sub classed.
 # So that it can more easily be switched between database types.

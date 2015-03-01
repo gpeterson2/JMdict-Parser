@@ -8,7 +8,9 @@ import sys
 from jmdict.parser.jmdict import Parser as JmdParser
 from kanjidic2.parser import Parser as KdParser
 from jmdict.data import SqliteWriter, SqliteReader
-from jmdict.utils.observer import ConsoleViewer
+from core.utils.observer import ConsoleViewer
+
+from core.data.mongo import MongoWriter
 
 def main():
     parser = argparse.ArgumentParser(description='Import edict xml')
@@ -51,9 +53,18 @@ def main():
 
         print(len(values))
 
-        #writer = SqliteWriter()
-        #writer.attach(viewer)
-        #writer.write(entries)
+        writer = None
+        # TODO - add an option for this.
+        if True:
+            uri = 'mongodb://localhost:27017/'
+            database = 'dictionary'
+            collection = 'kanjidic2'
+            writer = MongoWriter(uri, database, collection)
+        else:
+            writer = SqliteWriter()
+
+        writer.attach(viewer)
+        writer.write(values)
 
     #if list_values:
         #reader = SqliteReader()
