@@ -5,8 +5,8 @@ import sys
 
 from lxml import etree
 
-from ..utils.observer import Subject
 from core.parser import BaseXMLParser
+from core.utils.observer import Subject
 
 __all__ = ['Entry', 'Gloss', 'Parser']
 

@@ -6,7 +6,7 @@ import sys
 from lxml import etree
 
 from core.parser import BaseXMLParser
-from jmdict.utils.observer import Subject
+from core.utils.observer import Subject
 
 # TODO - for all this really accomplishes, I could find a xml to object project
 # and just use that. Technically you could get away with making these dicts
