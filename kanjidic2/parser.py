@@ -2,10 +2,10 @@
 # -*- coding: utf-8 -*-
 
 import sys
-import gzip
 
 from lxml import etree
 
+from core.parser import BaseXMLParser
 from jmdict.utils.observer import Subject
 
 # TODO - for all this really accomplishes, I could find a xml to object project
@@ -96,34 +96,9 @@ class Kanji(object):
     def __repr__(self):
         return 'Kanji({})'.format(self.literal)
 
-class Parser(Subject):
+class Parser(BaseXMLParser, Subject):
     def __init__(self, *args, **kwargs):
         super(Parser, self).__init__(*args, **kwargs)
-
-    def parse_from_file(self, path=None):
-        ''' Parse a KanjiDic2 file from the given a filepath.
-
-            :param path: Path to a file to read.
-        '''
-
-        f = None
-        if path.endswith('.gz'):
-            f = gzip.open(path, 'r')
-        else:
-            # assume xml
-            f = open(path, 'r')
-        return self.parse(f)
-
-    def parse_from_string(self, data):
-        ''' Parse a KanjiDic2 string.
-
-            :params data: The string to read.
-        '''
-
-        from StringIO import StringIO
-        xml = StringIO(data)
-
-        return self.parse(xml)
 
     def parse(self, xml):
         ''' Performs the parsing of the file. '''

@@ -2,11 +2,11 @@
 # -*- coding: utf-8 -*-
 
 import sys
-import gzip
 
 from lxml import etree
 
 from ..utils.observer import Subject
+from core.parser import BaseXMLParser
 
 __all__ = ['Entry', 'Gloss', 'Parser']
 
@@ -78,7 +78,7 @@ class Gloss(object):
     def __hash__(self):
         return hash(unicode(self.gloss) + unicode(self.pos) + unicode(self.lang))
 
-class Parser(Subject):
+class Parser(BaseXMLParser, Subject):
 
     def __init__(self, *args, **kwargs):
         ''' Reads a JMDict file.
@@ -90,31 +90,6 @@ class Parser(Subject):
         super(Parser, self).__init__(*args, **kwargs)
 
         # TODO - call super class.
-
-    def parse_from_file(self, path=None):
-        ''' Parse a JMDict file from the given a filepath.
-
-            :param path: Path to a file to read.
-        '''
-
-        f = None
-        if path.endswith('.gz'):
-            f = gzip.open(path, 'r')
-        else:
-            # assume xml
-            f = open(path, 'r')
-        return self.parse(f)
-
-    def parse_from_string(self, data):
-        ''' Parse a JMDict string.
-
-            :params data: The string to read.
-        '''
-
-        from StringIO import StringIO
-        xml = StringIO(data)
-
-        return self.parse(xml)
 
     def parse(self, xml):
         ''' Performs the parsing of the file. '''
