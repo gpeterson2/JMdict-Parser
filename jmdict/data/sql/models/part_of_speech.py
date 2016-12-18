@@ -2,7 +2,7 @@
 
 from sqlalchemy import Column, Integer, Unicode
 
-from meta import Base
+from .meta import Base
 
 metadata = Base.metadata
 

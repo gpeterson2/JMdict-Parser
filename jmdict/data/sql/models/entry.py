@@ -1,13 +1,13 @@
 #! /usr/bin/env python
 
 from sqlalchemy import Column, Integer
-from sqlalchemy.orm import relationship
+# from sqlalchemy.orm import relationship
 
-from meta import Base
+from .meta import Base
 
-#from sense import Sense
-#from kana_element import KanaElement
-#from kanji_element import KanjiElement
+# from .sense import Sense
+# from .kana_element import KanaElement
+# from .kanji_element import KanjiElement
 
 metadata = Base.metadata
 
@@ -22,17 +22,18 @@ class Entry(Base):
     __tablename__ = 'entry'
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    ent_seq = Column(Integer)
+    # TODO - rename after insert is normalized.
+    ent_seq = Column(Integer, name='entry')
 
-    kana = relationship('KanaElement', backref='entry')
-    kanji = relationship('KanjiElement', backref='entry')
-    sense = relationship('Sense', backref='entry')
+    # kana = relationship(KanaElement, backref='entry')
+    # kanji = relationship(KanjiElement, backref='entry')
+    # sense = relationship(Sense, backref='entry')
 
-    def __str__(self):
-        kanas = u', '.join([s.element for s in self.kanji])
-        kanjis = u', '.join([s.element for s in self.kana])
-        gloss = u', '.join([
-            u', '.join(['%s: %s' % (g.lang, g.gloss) for g in s.gloss])
-            for s in self.sense])
-
-        return u'k_ele: %s r_ele: %s sense: %s' % (kanas, kanjis, gloss)
+    # def __str__(self):
+    #     kanas = u', '.join([s.element for s in self.kanji])
+    #     kanjis = u', '.join([s.element for s in self.kana])
+    #     gloss = u', '.join([
+    #         u', '.join(['%s: %s' % (g.lang, g.gloss) for g in s.gloss])
+    #         for s in self.sense])
+    #
+    #     return u'k_ele: %s r_ele: %s sense: %s' % (kanas, kanjis, gloss)

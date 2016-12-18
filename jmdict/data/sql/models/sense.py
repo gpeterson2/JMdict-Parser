@@ -4,9 +4,10 @@ from sqlalchemy import Column, Integer, Table
 from sqlalchemy.orm import relationship
 from sqlalchemy.schema import ForeignKey
 
-from meta import Base
+from .meta import Base
 
-from gloss import Gloss
+from .part_of_speech import PartOfSpeech
+# from .gloss import Gloss
 
 metadata = Base.metadata
 
@@ -25,12 +26,12 @@ class Sense(Base):
     __tablename__ = 'sense'
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    gloss = relationship(Gloss, backref='sense')
-    pos = relationship('PartOfSpeech',
+    #gloss = relationship(Gloss, backref='sense')
+    pos = relationship(PartOfSpeech,
                        secondary=sense_pos_table,
                        backref='sense')
 
-    entry_id = Column(Integer, ForeignKey('entry.id'))
+    #entry_id = Column(Integer, ForeignKey('entry.id'))
 
     def __str__(self):
         return u'%s' % (u', '.join([g for g in self.gloss]))

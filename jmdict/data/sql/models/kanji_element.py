@@ -1,9 +1,9 @@
 #! /usr/bin/env python
 
 from sqlalchemy import Column, Integer, Unicode
-from sqlalchemy.schema import ForeignKey
+# from sqlalchemy.schema import ForeignKey
 
-from meta import Base
+from .meta import Base
 
 metadata = Base.metadata
 
@@ -21,12 +21,13 @@ class KanjiElement(Base):
     information fields. Synonyms are not included; they may be indicated
     in the cross-reference field associated with the sense element.'''
 
-    __tablename__ = 'kanji_element'
+    # TODO - rename after insert is normalized
+    __tablename__ = 'kanji'
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    element = Column(Unicode)
+    kanji = Column(Unicode)
 
-    entry_id = Column(Integer, ForeignKey('entry.id'))
+    # entry_id = Column(Integer, ForeignKey('entry.id'))
 
     def __str__(self):
-        return u'%s' % (self.element)
+        return u'%s' % (self.kanji)

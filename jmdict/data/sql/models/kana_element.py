@@ -1,9 +1,9 @@
 #! /usr/bin/env python
 
 from sqlalchemy import Column, Integer, Unicode
-from sqlalchemy.schema import ForeignKey
+# from sqlalchemy.schema import ForeignKey
 
-from meta import Base
+from .meta import Base
 
 metadata = Base.metadata
 
@@ -13,12 +13,13 @@ class KanaElement(Base):
     as chouon and kurikaeshi. Kana usage will be consistent between the keb
     and reb elements; e.g. if the keb contains katakana, so too will the reb.'''
 
-    __tablename__ = 'kana_element'
+    __tablename__ = 'kana'
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    element = Column(Unicode)
+    kana = Column(Unicode)
 
-    entry_id = Column(Integer, ForeignKey('entry.id'))
+    # TODO - get back to this.
+    #entry_id = Column(Integer, ForeignKey('entry.id'))
 
     def __str__(self):
-        return u'%s' % (self.element)
+        return u'%s' % (self.kana)

@@ -2,15 +2,19 @@
 # -*- coding: utf-8 -*-
 
 import gzip
+from io import BytesIO
 
 from lxml import etree
 
-from ..utils.observer import Subject
+from jmdict.utils.observer import Subject
 
 __all__ = ['Entry', 'Gloss', 'Parser']
 
 
-# TODO - should ideally be replaced by an ORM
+class JmdictParserException(Exception):
+    pass
+
+
 # TODO - at the least it should also be moved to a separate location
 class Entry(object):
     ''' An entry object.
@@ -91,8 +95,6 @@ class Parser(Subject):
         '''
         super(Parser, self).__init__(*args, **kwargs)
 
-        # TODO - call super class.
-
     def parse_from_file(self, path=None):
         ''' Parse a JMDict file from the given a filepath.
 
@@ -102,9 +104,11 @@ class Parser(Subject):
         f = None
         if path.endswith('.gz'):
             f = gzip.open(path, 'r')
-        else:
-            # assume xml
+        elif path.endswith('xml'):
             f = open(path, 'r')
+        else:
+            raise JmdictParserException('Invalid file type')
+
         return self.parse(f)
 
     def parse_from_string(self, data):
@@ -113,7 +117,6 @@ class Parser(Subject):
             :params data: The string to read.
         '''
 
-        from io import BytesIO
         xml = BytesIO(bytes(data, 'utf-8'))
 
         return self.parse(xml)
@@ -160,6 +163,27 @@ class Parser(Subject):
                 pass
 
             # not used until it hits the gloss entry
+            # FIXME - Can also contain "misc" element
+            # FIXME - There can be mutliple "pos" elements
+            #
+            #
+            #   ...
+            #    <ent_seq>1000225</ent_seq>
+            #   ...
+            #    <sense>
+            #    <pos>&adj-na;</pos>
+            #    <pos>&adj-no;</pos>
+            #    <misc>&uk;</misc>
+            #    <gloss>plain</gloss>
+            #    <gloss>frank</gloss>
+            #    <gloss>candid</gloss>
+            #    <gloss>open</gloss>
+            #    <gloss>direct</gloss>
+            #    <gloss>straightforward</gloss>
+            #    <gloss>unabashed</gloss>
+            #    <gloss>blatant</gloss>
+            #    <gloss>flagrant</gloss>
+            #    </sense>
             if tag == 'pos' and action == 'start':
                 pos = elem.text
 
