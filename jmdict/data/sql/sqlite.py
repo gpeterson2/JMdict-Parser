@@ -390,8 +390,8 @@ class SqliteReader(Reader):
         entries = []
         for row in cur.fetchall():
             entry_id = row[0]
-            kanas = unicode(row[1]).split(',')
-            kanjis = unicode(row[2]).split(',')
+            kanas = row[1].split(',')
+            kanjis = row[2].split(',')
             gloss = row[3]
             pos = row[4]
             lang = row[5]

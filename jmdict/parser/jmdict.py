@@ -39,7 +39,7 @@ class Entry(object):
         gloss_str = u','.join([g.gloss for g in self.glosses])
 
         return u'{0} [{1}] [{2}] {3}'.format(
-            unicode(self.entry_seq),
+            self.entry_seq,
             u','.join(self.kanas),
             u','.join(self.kanjis),
             gloss_str
@@ -76,7 +76,7 @@ class Gloss(object):
         return self.gloss == other.gloss and self.pos == other.pos and self.lang == other.lang
 
     def __hash__(self):
-        return hash(unicode(self.gloss) + unicode(self.pos) + unicode(self.lang))
+        return hash(self.gloss + self.pos + self.lang)
 
 class Parser(Subject):
 
@@ -111,8 +111,8 @@ class Parser(Subject):
             :params data: The string to read.
         '''
 
-        from StringIO import StringIO
-        xml = StringIO(data)
+        from io import BytesIO
+        xml = BytesIO(bytes(data, 'utf-8'))
 
         return self.parse(xml)
 

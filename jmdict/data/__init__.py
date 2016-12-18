@@ -1,1 +1,1 @@
-from sql.sqlite import *
+from .sql.sqlite import *

@@ -18,7 +18,7 @@ class TestJmdictParser(unittest.TestCase):
         e = Entry(entry_seq, kanas, kanjis, glosses)
 
         expected = u'1 [どうじょう] [仝] "as above" mark,Abkürzung für "siehe oben"'
-        result = unicode(e)
+        result = str(e)
 
         #for g in glosses:
             #print(g.gloss)
