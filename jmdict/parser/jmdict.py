@@ -1,7 +1,6 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import sys
 import gzip
 
 from lxml import etree
@@ -9,6 +8,7 @@ from lxml import etree
 from ..utils.observer import Subject
 
 __all__ = ['Entry', 'Gloss', 'Parser']
+
 
 # TODO - should ideally be replaced by an ORM
 # TODO - at the least it should also be moved to a separate location
@@ -51,6 +51,7 @@ class Entry(object):
             ','.join(repr(self.kanjis)), ','.join(repr(self.glosses))
         )
 
+
 class Gloss(object):
     ''' Object to contain translations.
 
@@ -77,6 +78,7 @@ class Gloss(object):
 
     def __hash__(self):
         return hash(self.gloss + self.pos + self.lang)
+
 
 class Parser(Subject):
 
@@ -159,14 +161,12 @@ class Parser(Subject):
 
             # not used until it hits the gloss entry
             if tag == 'pos' and action == 'start':
-                pos = None
-
                 pos = elem.text
 
                 # Shouldn't happen, of course...
                 # but write an error message if the text isn't found.
                 if not pos:
-                    self.notify(u'Error: Can\'t find: {0} {1}'.format(ent_seq, pos_text))
+                    self.notify(u'Error: Can\'t find: {0} {1}'.format(ent_seq, pos))
 
             if tag == 'gloss' and action == 'start':
                 gloss = elem.text
@@ -191,4 +191,3 @@ class Parser(Subject):
         self.notify(u'done reading')
 
         return entries
-

@@ -5,7 +5,9 @@ import unittest
 
 from jmdict.parser.jmdict import Parser, Entry, Gloss
 
+
 class TestJmdictParser(unittest.TestCase):
+
     def test_entry_to_string(self):
         entry_seq = 1
         kanas = [u'どうじょう']
@@ -20,10 +22,7 @@ class TestJmdictParser(unittest.TestCase):
         expected = u'1 [どうじょう] [仝] "as above" mark,Abkürzung für "siehe oben"'
         result = str(e)
 
-        #for g in glosses:
-            #print(g.gloss)
-
-        self.assertEqual(expected, result)
+        assert expected == result
 
     def test_gloss_to_string(self):
         gloss = u'"as above" mark',
@@ -32,9 +31,9 @@ class TestJmdictParser(unittest.TestCase):
 
         g = Gloss(gloss, pos, lang)
 
-        self.assertEqual(g.gloss, gloss)
-        self.assertEqual(g.pos, pos)
-        self.assertEqual(g.lang, lang)
+        assert g.gloss == gloss
+        assert g.pos == pos
+        assert g.lang == lang
 
     def test_from_string(self):
         xml = '''<?xml version="1.0" encoding="UTF-8"?>
@@ -71,17 +70,14 @@ class TestJmdictParser(unittest.TestCase):
         results = Parser().parse_from_string(xml)
         result = results[0]
 
-        self.assertEqual(int(expected.entry_seq), int(result.entry_seq))
-        self.assertEqual(expected.kanas, result.kanas)
-        self.assertEqual(expected.kanjis, result.kanjis)
+        assert int(expected.entry_seq) == int(result.entry_seq)
+        assert expected.kanas == result.kanas
+        assert expected.kanjis == result.kanjis
 
-        self.assertEqual(expected.glosses[0].gloss, result.glosses[0].gloss)
-        self.assertEqual(expected.glosses[0].lang, result.glosses[0].lang)
-        self.assertEqual(expected.glosses[0].pos, result.glosses[0].pos)
+        assert expected.glosses[0].gloss == result.glosses[0].gloss
+        assert expected.glosses[0].lang == result.glosses[0].lang
+        assert expected.glosses[0].pos == result.glosses[0].pos
 
-        self.assertEqual(expected.glosses[1].gloss, result.glosses[1].gloss)
-        self.assertEqual(expected.glosses[1].lang, result.glosses[1].lang)
-        self.assertEqual(expected.glosses[1].pos, result.glosses[1].pos)
-
-if __name__ == '__main__':
-    unittest.main()
+        assert expected.glosses[1].gloss == result.glosses[1].gloss
+        assert expected.glosses[1].lang == result.glosses[1].lang
+        assert expected.glosses[1].pos == result.glosses[1].pos

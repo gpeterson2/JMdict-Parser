@@ -1,10 +1,10 @@
 #! /usr/bin/env python
 
-import codecs
 import os
 import sqlite3
 
 from jmdict.utils.observer import Subject
+
 
 def write_from_list(conn, items, sql, table_sql=None):
     ''' General function to write lists of items to table.
@@ -29,6 +29,7 @@ def write_from_list(conn, items, sql, table_sql=None):
 
     conn.commit()
 
+
 def convert_to_tuple_list(items):
     ''' Converts single item lists to list of tuples.
 
@@ -37,6 +38,7 @@ def convert_to_tuple_list(items):
         :param items: A list of items to convert.
     '''
     return [(i,) for i in items]
+
 
 def create_dict_from_sql(conn, sql):
     ''' For the given sql returns an entry/id dictionary
@@ -58,12 +60,14 @@ def create_dict_from_sql(conn, sql):
 
     return d
 
+
 class Writer(Subject):
     def __init__(self, *args, **kwargs):
         super(Writer, self).__init__(*args, **kwargs)
 
     def write(self):
         pass
+
 
 # TODO - this should probably be an object which can be sub classed.
 # So that it can more easily be switched between database types.
@@ -100,9 +104,9 @@ class SqliteWriter(Writer):
         # TODO - this is taking far too much time, proably go back to
         # getting this when reading.
         self.notify('start reading unique values')
-        length = float(len(entries))
+        # length = float(len(entries))
         for i, entry in enumerate(entries):
-            #self.notify('{0}: {1:.0%}'.format(entry.entry_seq, i / length))
+            # self.notify('{0}: {1:.0%}'.format(entry.entry_seq, i / length))
             for kana in entry.kanas:
                 kanas.add(kana)
 
@@ -114,8 +118,8 @@ class SqliteWriter(Writer):
                 glosses.add(gloss)
 
         # TODO - need to figure this out from what I'm passing in now.
-        #table = "create table part_of_speach ( code varchar, text varchar);"
-        #sql = 'insert into part_of_speach(code, text) values(?, ?);'
+        #table = "create table part_of_speech ( code varchar, text varchar);"
+        #sql = 'insert into part_of_speech(code, text) values(?, ?);'
         #poss = [(v, k.replace("'", "\'")) for k, v in pos_dict.items()]
         #write_from_list(conn, poss, sql, table)
 
@@ -356,8 +360,10 @@ class SqliteWriter(Writer):
 
         self.notify('done saving')
 
+
 class Reader(object):
     pass
+
 
 class SqliteReader(Reader):
     def read(self):
@@ -389,7 +395,7 @@ class SqliteReader(Reader):
 
         entries = []
         for row in cur.fetchall():
-            entry_id = row[0]
+            # entry_id = row[0]
             kanas = row[1].split(',')
             kanjis = row[2].split(',')
             gloss = row[3]
@@ -397,7 +403,7 @@ class SqliteReader(Reader):
             lang = row[5]
 
             entry = (u'{0} [{1}] ({2}) {3} {4}'
-                .format(', '.join(kanas), ', '.join(kanjis), pos, gloss, lang))
+                     .format(', '.join(kanas), ', '.join(kanjis), pos, gloss, lang))
 
             entries.append(entry.strip())
 

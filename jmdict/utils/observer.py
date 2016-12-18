@@ -3,12 +3,13 @@
 
 __all__ = ['Subject', 'ConsoleViewer']
 
+
 class Subject(object):
     def __init__(self):
         self._observers = []
 
     def attach(self, observer):
-        if not observer in self._observers:
+        if observer not in self._observers:
             self._observers.append(observer)
 
     def detach(self, observer):
@@ -22,7 +23,7 @@ class Subject(object):
             if modifier != observer:
                 observer.update(message)
 
+
 class ConsoleViewer(object):
     def update(self, message):
         print('{0}'.format(message))
-

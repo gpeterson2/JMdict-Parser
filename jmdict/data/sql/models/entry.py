@@ -1,10 +1,9 @@
 #! /usr/bin/env python
 
-from sqlalchemy import Column, Integer, Table, Unicode
+from sqlalchemy import Column, Integer
 from sqlalchemy.orm import relationship
-from sqlalchemy.schema import ForeignKey
 
-from meta import Base, metadata
+from meta import Base
 
 #from sense import Sense
 #from kana_element import KanaElement
@@ -14,9 +13,10 @@ metadata = Base.metadata
 
 # TODO add info
 
+
 class Entry(Base):
-    '''Entries consist of kanji elements, reading elements, general 
-    information and sense elements. Each entry must have at least one reading 
+    '''Entries consist of kanji elements, reading elements, general
+    information and sense elements. Each entry must have at least one reading
     element and one sense element. Others are optional.'''
 
     __tablename__ = 'entry'
@@ -31,9 +31,8 @@ class Entry(Base):
     def __str__(self):
         kanas = u', '.join([s.element for s in self.kanji])
         kanjis = u', '.join([s.element for s in self.kana])
-        gloss = u', '.join([ 
-            u', '.join(['%s: %s' % (g.lang, g.gloss) for g in s.gloss]) 
+        gloss = u', '.join([
+            u', '.join(['%s: %s' % (g.lang, g.gloss) for g in s.gloss])
             for s in self.sense])
 
         return u'k_ele: %s r_ele: %s sense: %s' % (kanas, kanjis, gloss)
-
