@@ -10,6 +10,8 @@ The ultimate goal of this project is to be a library which can be feed
 a list of Japanese words and return a list of translations. Ideally without
 requiring a separate service running such as a database or mongodb.
 
+Tested on python 3.4.3.
+
 ------
 Issues
 ------
@@ -34,12 +36,6 @@ databases backends instead.
 The current goal is still to read the dictionary file and convert it into some
 kind of non-xml store that can be quickly read in or queried. At this point
 the specifics are fairly vague.
-
-------------
-Requirements
-------------
-- lxml
-- SqlAlchemy - not currently being used.
 
 -----
 TODO:
