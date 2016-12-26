@@ -1,5 +1,3 @@
-#! /usr/bin/env python
-
 from sqlalchemy import Column, Integer
 # from sqlalchemy.orm import relationship
 

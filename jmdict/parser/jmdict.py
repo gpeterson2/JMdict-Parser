@@ -23,7 +23,7 @@ class Entry(object):
         all kanji entires, and all gloss entires.
     '''
 
-    def __init__(self, entry_seq=0, kanas=None, kanjis=None, glosses=None):
+    def __init__(self, entry_seq=0, kanas=None, kanjis=None, senses=None):
 
         if not kanas:
             kanas = []
@@ -31,28 +31,58 @@ class Entry(object):
         if not kanjis:
             kanjis = []
 
-        if not glosses:
-            glosses = []
+        if not senses:
+            senses = []
 
         self.entry_seq = entry_seq
         self.kanas = kanas
         self.kanjis = kanjis
-        self.glosses = glosses
+        self.senses = senses
 
     def __str__(self):
-        gloss_str = u','.join([g.gloss for g in self.glosses])
+        glosses = []
+        for sense in self.senses:
+            for gloss in sense.glosses:
+                glosses.append(gloss.gloss)
 
         return u'{0} [{1}] [{2}] {3}'.format(
             self.entry_seq,
             u','.join(self.kanas),
             u','.join(self.kanjis),
-            gloss_str
+            u','.join(glosses),
         )
 
     def __repr__(self):
         return 'Entry({0}, {0}, {0}, {0})'.format(
-            self.entry_seq, ','.join(repr(self.kanas)),
-            ','.join(repr(self.kanjis)), ','.join(repr(self.glosses))
+            self.entry_seq,
+            ','.join(repr(self.kanas)),
+            ','.join(repr(self.kanjis)),
+            ','.join(repr(self.senses.glosses))
+        )
+
+
+class Sense(object):
+    ''' Object to contain gloss information. '''
+
+    def __init__(self, poses=None, miscs=None, glosses=None):
+        if not poses:
+            poses = []
+
+        if not miscs:
+            miscs = []
+
+        if not glosses:
+            glosses = []
+
+        self.poses = poses
+        self.miscs = miscs
+        self.glosses = glosses
+
+    def __str__(self):
+        return '{} {} {}'.format(
+            u','.join(self.poses),
+            u','.join(self.miscs),
+            u','.join(self.glosses),
         )
 
 
@@ -66,22 +96,19 @@ class Gloss(object):
 
     def __init__(self, gloss='', pos='', lang=''):
         self.gloss = gloss
-        self.pos = pos
         self.lang = lang
 
     def __str__(self):
-        return u'{0} {1} {2}'.format(self.gloss, self.pos, self.lang)
+        return u'{} {}'.format(self.gloss, self.lang)
 
     def __repr__(self):
-        return "Gloss('{0}', '{1}', '{2}')".format(
-            self.gloss, self.pos, self.lang
-        )
+        return "Gloss('{}', '{}')".format(self.gloss, self.lang)
 
     def __eq__(self, other):
-        return self.gloss == other.gloss and self.pos == other.pos and self.lang == other.lang
+        return self.gloss == other.gloss and self.lang == other.lang
 
     def __hash__(self):
-        return hash(self.gloss + self.pos + self.lang)
+        return hash(self.gloss + self.lang)
 
 
 class Parser(Subject):
@@ -160,7 +187,10 @@ class Parser(Subject):
                 entry.kanjis.append(kanji)
 
             if tag == 'sense' and action == 'start':
-                pass
+                sense = Sense()
+
+            if tag == 'misc' and action == 'start':
+                sense.miscs.append(elem.text)
 
             # not used until it hits the gloss entry
             # FIXME - Can also contain "misc" element
@@ -191,6 +221,8 @@ class Parser(Subject):
                 # but write an error message if the text isn't found.
                 if not pos:
                     self.notify(u'Error: Can\'t find: {0} {1}'.format(ent_seq, pos))
+                else:
+                    sense.poses.append(pos)
 
             if tag == 'gloss' and action == 'start':
                 gloss = elem.text
@@ -203,11 +235,10 @@ class Parser(Subject):
                 if len(keys) > 0:
                     lang = elem.get(keys[0])
 
-                entry.glosses.append(Gloss(gloss, pos, lang))
+                sense.glosses.append(Gloss(gloss=gloss, lang=lang))
 
-            # Not entirely sure this is even necessary...
             if tag == 'sense' and action == 'end':
-                pass
+                entry.senses.append(sense)
 
             if tag == 'entry' and action == 'end':
                 entries.append(entry)
