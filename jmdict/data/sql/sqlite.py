@@ -71,6 +71,8 @@ class SqliteWriter(Writer):
         #
         # Because of that this is also still slow as well.
 
+        self.notify('start reading bulk queries')
+
         kana_query = self.session.query(KanaElement).all()
         kana_dict = {k.kana: k for k in kana_query}
 
@@ -83,6 +85,10 @@ class SqliteWriter(Writer):
         gloss_key = lambda x: x.lang + '|' + x.gloss
         gloss_query = self.session.query(Gloss).all()
         gloss_dict = {gloss_key(g): g for g in gloss_query}
+
+        self.notify('finish reading bulk queries')
+
+        self.notify('start composing entries')
 
         items = []
         for entry in entries:
@@ -119,11 +125,17 @@ class SqliteWriter(Writer):
 
             items.append(item)
 
+        self.notify('finish composing entries')
+
         #self.session.bulk_save_objects(items)
+
+        self.notify('start entry save')
 
         self.session.begin()
         self.session.add_all(items)
         self.session.commit()
+
+        self.notify('finish entry save')
 
 
     def write_parts_of_speech(self, poses):
