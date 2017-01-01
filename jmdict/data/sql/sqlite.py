@@ -10,70 +10,12 @@ from jmdict.data.sql.models import (
     Gloss,
     KanaElement,
     KanjiElement,
-    Misc,
     PartOfSpeech,
+    Sense,
     Session,
     Warehouse,
     init_model,
 )
-
-
-def write_from_list(conn, items, sql, table_sql=None):
-    ''' General function to write lists of items to table.
-
-        Optionally creates a table as well.
-
-        :param conn: The connection object
-        :param items: A list of type items to write.
-        :param sql: The sql statement to run.
-        :param table_sql: SQL statement to create a table if necessary.
-    '''
-
-    cur = conn.cursor()
-
-    if table_sql:
-        try:
-            cur.execute(table_sql)
-        except sqlite3.OperationalError:
-            pass
-
-    try:
-        cur.executemany(sql, items)
-    except Exception as e:
-        print('%s\n\n%s' % (table_sql, e))
-
-    conn.commit()
-
-
-def convert_to_tuple_list(items):
-    ''' Converts single item lists to list of tuples.
-
-        A convience function.
-
-        :param items: A list of items to convert.
-    '''
-    return [(i,) for i in items]
-
-
-def create_dict_from_sql(conn, sql):
-    ''' For the given sql returns an entry/id dictionary
-
-        Convience function - Basically to allow searching for id's based on
-        items.
-
-        The sql statemen should be in the form of:
-        SELECT id, item FROM table
-    '''
-    cur = conn.cursor()
-    cur.execute(sql)
-
-    d = {}
-    for row in cur.fetchall():
-        item_id = row[0]
-        entry = row[1]
-        d[entry] = item_id
-
-    return d
 
 
 class Writer(Subject):
@@ -84,10 +26,6 @@ class Writer(Subject):
         pass
 
 
-# TODO - this should probably be an object which can be sub classed.
-# So that it can more easily be switched between database types.
-# Or it should use an ORM, which was the original plan before running
-# it meant waiting three hours...
 class SqliteWriter(Writer):
 
     # TODO - this performs bulk entries, which we probably want for each item type.
@@ -105,25 +43,89 @@ class SqliteWriter(Writer):
     # - Insert the connections (which probably requires adding join tables to
     #   models).
 
-    def __init__(self, connection_string='test.db', *args, **kwargs):
+    def __init__(self, connection_string='test.db', drop_tables=False, *args, **kwargs):
         super(SqliteWriter, self).__init__(*args, **kwargs)
 
-        # New sqlalchemy queries
         uri = 'sqlite:///{0}'.format(connection_string)
         self.meta = init_model(uri)
+
+        if drop_tables:
+            self.meta.drop_all()
         self.meta.create_all()
 
-        # Probably should be created separately for each function
         self.session = Session()
 
     def write_entries(self, entries):
+        ''' Write entries
+
+            This assumes that other bulk queries have already been run.
+        '''
         self.notify('start writing entries')
 
-        # FIXME - Will need to update this with connections later.
-        items = [Entry(ent_seq=e.entry_seq) for e in entries]
-        self.session.bulk_save_objects(items)
+        # NOTE - This is horribly memory intensive. Ideally all of the bulk
+        # inserted values would not have to be queried in full as dictionaries
+        # but this then avoids a lookup for each individual item.
+        #
+        # Also, the relationships as currently defined can't be bulk inserted,
+        # they would have to be defined as stand alone classes for that.
+        #
+        # Because of that this is also still slow as well.
 
-    # Why don't I have this again? Was this the hard-coded part?
+        kana_query = self.session.query(KanaElement).all()
+        kana_dict = {k.kana: k for k in kana_query}
+
+        kanji_query = self.session.query(KanjiElement).all()
+        kanji_dict = {k.kanji: k for k in kanji_query}
+
+        pos_query = self.session.query(PartOfSpeech).all()
+        pos_dict = {p.text: p for p in pos_query}
+
+        gloss_key = lambda x: x.lang + '|' + x.gloss
+        gloss_query = self.session.query(Gloss).all()
+        gloss_dict = {gloss_key(g): g for g in gloss_query}
+
+        items = []
+        for entry in entries:
+            item = Entry(ent_seq=entry.entry_seq)
+
+            for kana in entry.kanas:
+                kana_item = kana_dict[kana]
+                item.kana.append(kana_item)
+
+            for kanji in entry.kanjis:
+                kanji_item = kanji_dict[kanji]
+                item.kanji.append(kanji_item)
+
+            for sense in entry.senses:
+                sense_item = Sense()
+
+                for pos in sense.poses:
+                    pos_item = pos_dict.get(pos)
+                    if pos_item:
+                        sense_item.pos.append(pos_item)
+                    else:
+                        print('invalid part of speech: {} {}'.format(entry.entry_seq, pos))
+
+                for misc in sense.miscs:
+                    misc_item = pos_dict.get(misc)
+                    sense_item.misc.append(misc_item)
+
+                for gloss in sense.glosses:
+                    key = gloss_key(gloss)
+                    gloss_item = gloss_dict.get(key)
+                    sense_item.gloss.append(gloss_item)
+
+                item.sense.append(sense_item)
+
+            items.append(item)
+
+        #self.session.bulk_save_objects(items)
+
+        self.session.begin()
+        self.session.add_all(items)
+        self.session.commit()
+
+
     def write_parts_of_speech(self, poses):
         self.notify('start writing parts of speech')
 
@@ -142,19 +144,9 @@ class SqliteWriter(Writer):
         items = [KanjiElement(kanji=k) for k in kanjis]
         self.session.bulk_save_objects(items)
 
-    # FIXME - Technically these are parts of speech, but in a separate category.
-    def write_miscs(self, miscs):
-        self.notify('start writing misc')
-
-        # FIXME - pos should be on the sense element.
-        items = [Misc(misc=m) for m in miscs]
-        self.session.bulk_save_objects(items)
-
-    # FIXME - write Sense entry as well. Doesn't necessarily have to be here.
     def write_glosses(self, glosses):
         self.notify('start writing glosses')
 
-        # FIXME - pos should be on the sense element.
         items = [Gloss(gloss=g.gloss, lang=g.lang) for g in glosses]
         self.session.bulk_save_objects(items)
 
@@ -186,10 +178,13 @@ class SqliteWriter(Writer):
                     langs.add(gloss.lang)
 
             # FIXME - use another separator to join these.
-            w.pos = u','.join(poses)
-            w.misc = u','.join(miscs)
-            w.lang = u','.join(langs)
-            w.gloss = u','.join(glosses)
+            # sqlite uses "|" for visual identification, so ideally something
+            # other than that.
+
+            w.pos = w.sep.join(poses)
+            w.misc = w.sep.join(miscs)
+            w.lang = w.sep.join(langs)
+            w.gloss = w.sep.join(glosses)
 
             items.append(w)
 
@@ -234,21 +229,20 @@ class SqliteWriter(Writer):
 
         self.notify('start saving')
 
-        # Unique tables
-
-        # TODO - this is taking far too much time, probably go back to
-        # getting this when reading.
         self.notify('start reading unique values')
 
+        # Bulk unique tables
         kanas, kanjis, pos, glosses, miscs = self.split_entries(entries)
 
-        self.write_entries(entries)
         self.write_kanas(kanas)
         self.write_kanjis(kanjis)
-        self.write_miscs(miscs)
         self.write_glosses(glosses)
         self.write_parts_of_speech(PARTS_OF_SPEECH)
 
+        # Join Tables.
+        self.write_entries(entries)
+
+        # Warehouse
         self.write_warehouse(entries)
 
         # self.session.commit()
@@ -260,51 +254,33 @@ class Reader(object):
     pass
 
 
+# TODO - Ideally this would join the values and return that.
 class SqliteReader(Reader):
 
+    # TODO - put this in a more central location, so it's not repeated with
+    # the writer.
+    def __init__(self, connection_string='test.db', *args, **kwargs):
+        super(SqliteReader, self).__init__(*args, **kwargs)
+
+        uri = 'sqlite:///{0}'.format(connection_string)
+        self.meta = init_model(uri)
+        self.meta.create_all()
+
+        self.session = Session()
+
     def read(self):
-        connection_string = 'test.db'
 
-        if not os.path.exists(connection_string):
-            # TODO make this a specific exception, and pass this in.
-            raise Exception('Databse not found.')
+        items = []
+        entries = self.session.query(Warehouse).all()
 
-        conn = sqlite3.connect(connection_string)
+        for entry in entries:
 
-        cur = conn.cursor()
+            display = '{kanji} [{kana}] ({pos}) {glosses}'.format(
+                kanji=','.join(entry.kanjis),
+                kana=','.join(entry.kanas),
+                pos=','.join(entry.parts_of_speech),
+                glosses=','.join(entry.glosses),
+            )
+            items.appen(display)
 
-        sql = """
-            select
-                entry_id
-                , kana
-                , kanji
-                , pos
-                , misc
-                , gloss
-                , lang
-            from warehouse
-            where 'eng' in lang
-        """
-
-        cur.execute(sql)
-
-        entries = []
-        for row in cur.fetchall():
-            entry_id = row['entry_id']
-            kanas = row['kana'].split(',')
-            kanjis = row['kanji'].split(',')
-            pos = row['pos'].split(',')
-            gloss = row['gloss'].split(',')
-            lang = row['lang'].split(',')
-
-            entry = (u'{} [{}] ({}) {} {} {}'.format(
-                entry_id,
-                ', '.join(kanas),
-                ', '.join(kanjis),
-                ', '.join(pos),
-                ', '.join(gloss),
-                ', '.join(lang)))
-
-            entries.append(entry.strip())
-
-        return entries
+        return items

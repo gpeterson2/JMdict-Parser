@@ -215,7 +215,7 @@ class Parser(Subject):
             #    <gloss>flagrant</gloss>
             #    </sense>
             if tag == 'pos' and action == 'start':
-                pos = elem.text
+                pos = elem.text.replace("`", "'")
 
                 # Shouldn't happen, of course...
                 # but write an error message if the text isn't found.

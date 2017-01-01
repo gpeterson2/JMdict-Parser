@@ -21,5 +21,32 @@ class Warehouse(Base):
     gloss = Column(Unicode)
     lang = Column(Unicode)
 
+    def __init__(self, *args, **kwargs):
+        self.sep = '^'
+
+    @property
+    def kanas(self):
+        return self.kana.split(self.sep)
+
+    @property
+    def kanjis(self):
+        return self.kanji.split(self.sep)
+
+    @property
+    def parts_of_speech(self):
+        return self.pos.split(self.sep)
+
+    @property
+    def miscs(self):
+        return self.misc.split(self.sep)
+
+    @property
+    def glosses(self):
+        return self.gloss.split(self.sep)
+
+    @property
+    def langs(self):
+        return self.lang.split(self.sep)
+
     def __str__(self):
         return u'{}'.format(self.entry_id)

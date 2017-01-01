@@ -34,7 +34,7 @@ def main():
 
         entries = parser.parse_from_file(filename)
 
-        writer = SqliteWriter()
+        writer = SqliteWriter(drop_tables=True)
         writer.attach(viewer)
         writer.write(entries)
 
