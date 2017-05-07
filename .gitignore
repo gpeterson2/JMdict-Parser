@@ -2,3 +2,4 @@
 *.db
 todo.txt
 .cache
+venv
