@@ -20,4 +20,4 @@ class Gloss(Base):
     lang = Column(Unicode)
 
     def __str__(self):
-        return u'lang: {}: {}' % (self.lang, self.gloss)
+        return u'lang: {}: {}'.format(self.lang, self.gloss)

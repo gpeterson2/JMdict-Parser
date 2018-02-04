@@ -1,14 +1,10 @@
-#! /usr/bin/env python
 # -*- coding: utf-8 -*-
-
-import gzip
-from io import BytesIO
 
 from lxml import etree
 
-from jmdict.utils.observer import Subject
+import core.parser.parser as base_parser
 
-__all__ = ['Entry', 'Gloss', 'Parser']
+__all__ = ['Entry', 'Gloss', 'JmdictParser']
 
 
 class JmdictParserException(Exception):
@@ -17,7 +13,7 @@ class JmdictParserException(Exception):
 
 # TODO - at the least it should also be moved to a separate location
 class Entry(object):
-    ''' An entry object.
+    ''' A light weight entry object as compared to say a sqlalchemy model.
 
         For a given entry contains all kana entries,
         all kanji entires, and all gloss entires.
@@ -53,7 +49,7 @@ class Entry(object):
         )
 
     def __repr__(self):
-        return 'Entry({0}, {0}, {0}, {0})'.format(
+        return u'Entry({0}, {0}, {0}, {0})'.format(
             self.entry_seq,
             ','.join(repr(self.kanas)),
             ','.join(repr(self.kanjis)),
@@ -62,7 +58,7 @@ class Entry(object):
 
 
 class Sense(object):
-    ''' Object to contain gloss information. '''
+    ''' A light weight object to contain gloss information. '''
 
     def __init__(self, poses=None, miscs=None, glosses=None):
         if not poses:
@@ -79,7 +75,7 @@ class Sense(object):
         self.glosses = glosses
 
     def __str__(self):
-        return '{} {} {}'.format(
+        return u'{} {} {}'.format(
             u','.join(self.poses),
             u','.join(self.miscs),
             u','.join(self.glosses),
@@ -87,14 +83,14 @@ class Sense(object):
 
 
 class Gloss(object):
-    ''' Object to contain translations.
+    ''' A light weight object to contain translations.
 
         :param gloss: The translated text.
         :param pos: The part of speech for the entry.
         :param lang: The language of the translation.
     '''
 
-    def __init__(self, gloss='', pos='', lang=''):
+    def __init__(self, gloss=u'', pos=u'', lang=u''):
         self.gloss = gloss
         self.lang = lang
 
@@ -102,7 +98,7 @@ class Gloss(object):
         return u'{} {}'.format(self.gloss, self.lang)
 
     def __repr__(self):
-        return "Gloss('{}', '{}')".format(self.gloss, self.lang)
+        return u"Gloss('{}', '{}')".format(self.gloss, self.lang)
 
     def __eq__(self, other):
         return self.gloss == other.gloss and self.lang == other.lang
@@ -111,42 +107,7 @@ class Gloss(object):
         return hash(self.gloss + self.lang)
 
 
-class Parser(Subject):
-
-    def __init__(self, *args, **kwargs):
-        ''' Reads a JMDict file.
-
-            :params infile: The JMDict input file.
-            :params message_out: An output stream for parsing messages,
-                defaults to none.
-        '''
-        super(Parser, self).__init__(*args, **kwargs)
-
-    def parse_from_file(self, path=None):
-        ''' Parse a JMDict file from the given a filepath.
-
-            :param path: Path to a file to read.
-        '''
-
-        f = None
-        if path.endswith('.gz'):
-            f = gzip.open(path, 'r')
-        elif path.endswith('xml'):
-            f = open(path, 'r')
-        else:
-            raise JmdictParserException('Invalid file type')
-
-        return self.parse(f)
-
-    def parse_from_string(self, data):
-        ''' Parse a JMDict string.
-
-            :params data: The string to read.
-        '''
-
-        xml = BytesIO(bytes(data, 'utf-8'))
-
-        return self.parse(xml)
+class JmdictParser(base_parser.Parser):
 
     def parse(self, xml):
         ''' Performs the parsing of the file. '''

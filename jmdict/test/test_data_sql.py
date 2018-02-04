@@ -1,4 +1,3 @@
-#! /usr/bin/env python
 # -*- coding: utf-8 -*-
 
 # TODO ke_inf
@@ -8,7 +7,7 @@ import tempfile
 import unittest
 
 from jmdict.utils.observer import ConsoleViewer
-from jmdict.parser.jmdict import Parser
+from jmdict.parser.jmdict import JmdictParser as Parser
 from jmdict.data.parts_of_speech import PARTS_OF_SPEECH
 from jmdict.data.sql.sqlite import SqliteWriter
 from jmdict.data.sql.models import (
@@ -41,7 +40,7 @@ class JMdictDataSqlBase(unittest.TestCase):
         writer.attach(viewer)
         self.writer = writer
 
-        self.xml = '''<?xml version="1.0" encoding="UTF-8"?>
+        self.xml = u'''<?xml version="1.0" encoding="UTF-8"?>
             <!DOCTYPE JMdict [
             <!ENTITY adj-i "adjective (keiyoushi)">
             <!ENTITY adj-t "`taru' adjective">
@@ -154,10 +153,11 @@ class TestEntry(JMdictDataSqlBase):
         assert entry.ent_seq == 1000050
 
         assert len(entry.kana) == 1
-        assert entry.kana[0].kana == 'どうじょう'
+        print(entry.kana[0].kana)
+        assert entry.kana[0].kana == u'どうじょう'
 
         assert len(entry.kanji) == 1
-        assert entry.kanji[0].kanji == '仝'
+        assert entry.kanji[0].kanji == u'仝'
 
         assert len(entry.sense) == 1
         sense = entry.sense[0]
@@ -171,11 +171,11 @@ class TestEntry(JMdictDataSqlBase):
         gloss1 = sense.gloss[0]
         gloss2 = sense.gloss[1]
 
-        assert gloss1.lang == 'eng'
-        assert gloss1.gloss == '"as above" mark'
+        assert gloss1.lang == u'eng'
+        assert gloss1.gloss == u'"as above" mark'
 
-        assert gloss2.lang == 'ger'
-        assert gloss2.gloss == 'Abkürzung für "siehe oben"'
+        assert gloss2.lang == u'ger'
+        assert gloss2.gloss == u'Abkürzung für "siehe oben"'
 
     def test_write_parts_of_speech(self):
         self.writer.write_parts_of_speech(PARTS_OF_SPEECH)
@@ -216,7 +216,7 @@ class TestEntry(JMdictDataSqlBase):
 
         self.writer.write(entries)
 
-        entry = self.session.query(Entry).filter(Entry.ent_seq==1000260).first()
+        entry = self.session.query(Entry).filter(Entry.ent_seq == 1000260).first()
 
         assert len(entry.sense) == 4
         senses = entry.sense
@@ -231,7 +231,7 @@ class TestEntry(JMdictDataSqlBase):
 
         self.writer.write(entries)
 
-        entry = self.session.query(Entry).filter(Entry.ent_seq==1005450).first()
+        entry = self.session.query(Entry).filter(Entry.ent_seq == 1005450).first()
 
         assert len(entry.sense) == 1
         sense = entry.sense[0]
@@ -241,8 +241,8 @@ class TestEntry(JMdictDataSqlBase):
         pos1 = sense.pos[0]
         pos2 = sense.pos[1]
 
-        assert pos1.code == 'adj-t'
-        assert pos1.text == "'taru' adjective"
+        assert pos1.code == u'adj-t'
+        assert pos1.text == u"'taru' adjective"
 
-        assert pos2.code == 'adv-to'
+        assert pos2.code == u'adv-to'
         assert pos2.text == "adverb taking the 'to' particle"

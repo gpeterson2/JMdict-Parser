@@ -3,9 +3,10 @@
 import argparse
 import os
 
-from jmdict.parser.jmdict import Parser
-from jmdict.data import SqliteWriter, SqliteReader
+from jmdict.parser.jmdict import JmdictParser
+from jmdict.data.sql.base import Writer, Reader
 from jmdict.utils.observer import ConsoleViewer
+import settings
 
 
 def main():
@@ -23,23 +24,25 @@ def main():
     filename = args.import_file
     list_values = args.list_values
 
+    connection_string = settings.CONNECTION_URI
+
     if filename:
         if not os.path.exists(filename):
             print('Invalid file name')
             exit(1)
 
         viewer = ConsoleViewer()
-        parser = Parser()
-        parser.attach(viewer)
+        jmdict_parser = JmdictParser()
+        jmdict_parser.attach(viewer)
 
-        entries = parser.parse_from_file(filename)
+        entries = jmdict_parser.parse_from_file(filename)
 
-        writer = SqliteWriter(drop_tables=True)
-        writer.attach(viewer)
-        writer.write(entries)
+        jmdict_writer = Writer(connection_string, drop_tables=True)
+        jmdict_writer.attach(viewer)
+        jmdict_writer.write(entries)
 
     if list_values:
-        reader = SqliteReader()
+        reader = Reader(connection_string)
         entries = reader.read()
 
         for entry in entries:

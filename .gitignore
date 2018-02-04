@@ -1,5 +1,10 @@
 *.pyc
 *.db
-todo.txt
+
 .cache
+.pytest_cache
+
 venv
+local_settings.py
+
+todo.txt

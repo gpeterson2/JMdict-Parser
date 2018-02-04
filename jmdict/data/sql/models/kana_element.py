@@ -20,4 +20,4 @@ class KanaElement(Base):
     #entry_id = Column(Integer, ForeignKey('entry.id'))
 
     def __str__(self):
-        return u'%s' % (self.kana)
+        return self.kana

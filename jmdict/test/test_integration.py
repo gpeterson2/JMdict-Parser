@@ -1,9 +1,9 @@
-#! /usr/bin/env python
 # -*- coding: utf-8 -*-
 
 import unittest
 
-from jmdict.parser.jmdict import Parser, Entry, Gloss, Sense
+from jmdict.parser.jmdict import JmdictParser as Parser
+from jmdict.parser.jmdict import Entry, Gloss, Sense
 
 
 class TestJmdictParser(unittest.TestCase):
@@ -20,10 +20,8 @@ class TestJmdictParser(unittest.TestCase):
         ]
         senses = [sense]
 
-        e = Entry(entry_seq, kanas, kanjis, senses)
-
         expected = u'1 [どうじょう] [仝] "as above" mark,Abkürzung für "siehe oben"'
-        result = str(e)
+        result = unicode(Entry(entry_seq, kanas, kanjis, senses))
 
         assert expected == result
 
@@ -37,7 +35,7 @@ class TestJmdictParser(unittest.TestCase):
         assert g.lang == lang
 
     def test_from_string(self):
-        xml = '''<?xml version="1.0" encoding="UTF-8"?>
+        xml = u'''<?xml version="1.0" encoding="UTF-8"?>
             <!DOCTYPE JMdict [
             <!ENTITY n "noun (common) (futsuumeishi)">
             ]>
@@ -88,7 +86,6 @@ class TestJmdictParser(unittest.TestCase):
         assert expected_sense.poses[0] == parts_of_speech[0]
 
         glosses = expected_sense.glosses
-        print(glosses)
         assert expected_sense.glosses[0].gloss == glosses[0].gloss
         assert expected_sense.glosses[0].lang == glosses[0].lang
 
